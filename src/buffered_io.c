@@ -67,8 +67,13 @@ int my_putc(int c, MY_FILE* file) {
 
 int my_close(MY_FILE* file) {
     if (file->buf_pos > 0) {
-        if (write(file->fd, file->buffer, file->buf_pos) != file->buf_pos) {
+        ssize_t bytes_written = write(file->fd, file->buffer, file->buf_pos);
+        if (bytes_written != file->buf_pos) {
             perror("Error writing final buffer");
+            close(file->fd);
+            free(file);
+            return -1;
+
         }
     }
     int result = close(file->fd);

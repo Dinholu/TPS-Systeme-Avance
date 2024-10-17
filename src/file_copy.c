@@ -30,6 +30,7 @@ void copy_file(const char* src, const char* dst) {
             perror("Error writing to destination file");
             close(src_fd);
             close(dst_fd);
+            remove(dst);
             exit(EXIT_FAILURE);
         }
     }

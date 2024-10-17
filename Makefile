@@ -1,6 +1,8 @@
+# Variables
 CC=gcc
-CFLAGS=-Wall -c
-LDFLAGS=-I ./include/
+CFLAGS=-Wall -c -I $(INC_DIR)
+LDFLAGS=-I $(INC_DIR)
+GCOVFLAGS=-O0 --coverage -lgcov -Wall -g
 
 SRC_DIR=./src
 INC_DIR=./include
@@ -8,55 +10,63 @@ BIN_DIR=./bin
 DOC_DIR=./doc
 GCOV_DIR=./gcov
 
-GCOVFLAGS=-O0 --coverage -lgcov -Wall -g
-
-LCOV_REPORT=report.info
-
 SRC=$(wildcard $(SRC_DIR)/*.c)
 OBJ=$(SRC:.c=.o)
-EXEC=skeleton
+EXEC=$(BIN_DIR)/skeleton
 
-GEXEC=$(EXEC).cov
+GEXEC=$(GCOV_DIR)/skeleton.cov
+AR_NAME=archive_skeleton.tar.gz
+LCOV_REPORT=report.info
 
-AR_NAME=archive_$(EXEC).tar.gz
+# Règle principale pour construire le projet
+all: $(EXEC)
 
+# Compilation des fichiers .o depuis src/ vers src/
+$(SRC_DIR)/%.o: $(SRC_DIR)/%.c
+	$(CC) $(CFLAGS) $< -o $@
 
-all: $(SRC) $(EXEC)
-    
-%.o:%.c
-	$(CC) $(CFLAGS) $< $(LDFLAGS) -o $@
+# Création de l'exécutable dans bin/
+$(EXEC): $(OBJ)
+	@mkdir -p $(BIN_DIR)
+	$(CC) -o $(EXEC) $(OBJ) $(LDFLAGS)
 
-$(EXEC): $(OBJ) 
-	$(CC) -o $(BIN_DIR)/$@ -Wall $(LDFLAGS) $(OBJ)
+# Génération de l'exécutable pour gcov dans gcov/
+$(GEXEC): $(SRC)
+	@mkdir -p $(GCOV_DIR)
+	$(CC) $(GCOVFLAGS) -o $(GEXEC) $(SRC) $(LDFLAGS)
 
-$(GEXEC):
-	$(CC) $(GCOVFLAGS) -o $(GCOV_DIR)/$@ -Wall $(LDFLAGS) $(SRC)
-
+# Génération de la documentation
 doc:
 	doxygen $(DOC_DIR)/doxygen.conf
 
+# Exécution de l'instrumentation gcov et génération du rapport de couverture
 gcov: $(GEXEC)
-	# generate some data for gcov by calling the generated binary with various options
-	$(GCOV_DIR)/$(GEXEC) -h
-	$(GCOV_DIR)/$(GEXEC) -i input -o output -v
+	$(GEXEC) -h
+	$(GEXEC) -i input -o output -v
 
-	find ./ -maxdepth 1 -name *.gcno -exec mv {} $(GCOV_DIR) \;
-	find ./ -maxdepth 1 -name *.gcda -exec mv {} $(GCOV_DIR) \;
+	# Déplacer les fichiers de couverture dans gcov/
+	find . -name "*.gcno" -exec mv {} $(GCOV_DIR) \;
+	find . -name "*.gcda" -exec mv {} $(GCOV_DIR) \;
 
+	# Générer les rapports gcov et lcov
 	gcov -o $(GCOV_DIR) $(GEXEC)
 	lcov -o $(GCOV_DIR)/$(LCOV_REPORT) -c -f -d $(GCOV_DIR)
 	genhtml -o $(GCOV_DIR)/report $(GCOV_DIR)/$(LCOV_REPORT)
 
+# Créer une archive du projet
 package: gcov doc all
 	rm -rf $(AR_NAME)
 	tar cvfz $(AR_NAME) ./*
-clean:	
-	rm -rf $(OBJ)
 
+# Nettoyage des fichiers objets
+clean:
+	rm -rf $(SRC_DIR)/*.o
+
+# Nettoyage complet
 mrproper: clean
 	rm -rf $(BIN_DIR)/*
 	rm -rf $(DOC_DIR)/latex/
 	rm -rf $(DOC_DIR)/html/
 	rm -rf $(GCOV_DIR)/*
 
-.PHONY: doc
+.PHONY: doc gcov package clean mrproper

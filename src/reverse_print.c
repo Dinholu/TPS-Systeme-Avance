@@ -19,22 +19,33 @@ void print_reverse(const char* filename) {
         exit(EXIT_FAILURE);
     }
 
-    char ch;
-    for (off_t i = file_size - 1; i >= 0; --i) {
-        if (lseek(fd, i, SEEK_SET) == -1) {
-            perror("Error seeking in file");
-            close(fd);
-            exit(EXIT_FAILURE);
-        }
-
-        if (read(fd, &ch, 1) == -1) {
-            perror("Error reading file");
-            close(fd);
-            exit(EXIT_FAILURE);
-        }
-
-        write(STDOUT_FILENO, &ch, 1);
+    if (lseek(fd, 0, SEEK_SET) == -1) {
+        perror("Error repositioning file");
+        close(fd);
+        exit(EXIT_FAILURE);
     }
 
+    char *buffer = (char *)malloc(file_size);
+    if (buffer == NULL) {
+        perror("Memory allocation error");
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+
+    ssize_t bytes_read = read(fd, buffer, file_size);
+    if (bytes_read == -1) {
+        perror("Error reading file");
+        free(buffer);
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+
+    for (off_t i = file_size - 1; i >= 0; --i) {
+        write(STDOUT_FILENO, &buffer[i], 1);
+    }
+
+    write(STDOUT_FILENO, "\n", 1);
+
+    free(buffer);
     close(fd);
 }
