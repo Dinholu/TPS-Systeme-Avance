@@ -1,0 +1,1 @@
+/usr/bin/cc  -Wall -Wextra -g CMakeFiles/my_shell.dir/main.c.o CMakeFiles/my_shell.dir/parser.c.o CMakeFiles/my_shell.dir/executor.c.o CMakeFiles/my_shell.dir/builtins.c.o -o my_shell 
