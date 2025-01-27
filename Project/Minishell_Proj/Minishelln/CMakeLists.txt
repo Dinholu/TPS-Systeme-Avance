@@ -26,10 +26,10 @@ set(HEADERS
 )
 
 # Cible pour créer l'exécutable
-add_executable(my_shell ${SOURCES} ${HEADERS})
+add_executable(minishell ${SOURCES} ${HEADERS})
 
 # Ajoute des options spécifiques (optionnel)
-target_include_directories(my_shell PRIVATE ${CMAKE_SOURCE_DIR})
+target_include_directories(minishell PRIVATE ${CMAKE_SOURCE_DIR})
 
 # Ajout de commandes Doxygen pour la documentation (optionnel)
 find_package(Doxygen)

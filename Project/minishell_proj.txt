@@ -20,4 +20,4 @@ make doc //générer la documentation
 rm -rf build/ && mkdir build/ && cd build/
 cmake ../Minishelln/
 make
-./my_shell
+./minishell
