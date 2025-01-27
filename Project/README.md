@@ -16,7 +16,7 @@ Le but de ce projet est de réaliser un shell minimaliste en langage C. Ce shell
 
 ## Utilisation
 
-Pour utiliser ce shell, il suffit de cloner le repository et de compiler le programme avec les commandes suivante :
+Pour utiliser ce shell, il suffit de cloner le repository et de compiler le programme avec les commandes suivantes :
 
 ```bash
 cd Minishell_Proj/
