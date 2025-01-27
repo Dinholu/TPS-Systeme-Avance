@@ -5,8 +5,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PROMPT "my_shell> "
+// #define PROMPT "vlad_alizee_shell> "
+#define PROMPT "shell> "
 
+/**
+ * Vérifie si une commande est un built-in et l'exécute si c'est le cas.
+ * @param args Tableau d'arguments de la commande.
+ * @return 1 si un built-in a été exécuté, 0 sinon.
+ */
 int is_builtin(char **args) {
   if (strcmp(args[0], "cd") == 0)
     return builtin_cd(args);
@@ -19,21 +25,55 @@ int is_builtin(char **args) {
   return 0; // Pas un built-in
 }
 
+/**
+ * Fonction principale du shell.
+ * Boucle principale qui lit les commandes de l'utilisateur,
+ * les analyse, et les exécute.
+ */
 int main() {
   char command[1024];
+
   while (1) {
     printf(PROMPT);
+
     if (!fgets(command, sizeof(command), stdin)) {
       break; // EOF
     }
-    command[strcspn(command, "\n")] = 0; // Enlève le '\n'
 
-    // Parse et exécute
-    char **args = parse_command(command);
-    if (args[0] && !is_builtin(args)) {
-      execute_command(args);
+    // Supprime le '\n' en fin de commande
+    command[strcspn(command, "\n")] = 0;
+
+    // Vérifie si la commande est vide
+    if (strlen(command) == 0) {
+      continue;
     }
-    free(args);
+
+    // Gestion des pipes : séparation de la commande en segments
+    char **pipes = split_pipes(command);
+
+    // Si la commande contient des pipes
+    if (pipes[1] != NULL) {
+      execute_piped_commands(pipes);
+      for (int i = 0; pipes[i] != NULL; i++) {
+        free(pipes[i]);
+      }
+      free(pipes);
+    } else {
+      // Si pas de pipes, analyse et exécution normale
+      char **args = parse_command(command);
+
+      // Exécute un built-in ou une commande système
+      if (args[0]) {
+        if (is_builtin(args)) {
+          continue;
+        }
+        execute_command(args);
+      }
+
+      // Libère la mémoire utilisée pour les arguments
+      free(args);
+    }
   }
+
   return 0;
 }
