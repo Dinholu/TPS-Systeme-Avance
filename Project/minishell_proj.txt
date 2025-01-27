@@ -1,12 +1,12 @@
-Project structure : 
+Project structure :
 build/
 	Cmake ....
-	
+
 Minishell/
 	docs/
 	html/
 	latex/
-....c	
+....c
 ....h
 CMakeLists.txt
 Doxyfile
@@ -18,6 +18,6 @@ doxygen -g  //crée un fichier Doxyfile
 make doc //générer la documentation
 
 rm -rf build/ && mkdir build/ && cd build/
-cmake ../Minishell/
+cmake ../Minishelln/
 make
 ./my_shell
