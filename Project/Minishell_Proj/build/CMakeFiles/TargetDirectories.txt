@@ -1,4 +1,0 @@
-/home/vsacchetto/CNAM_Projects/Minishell_Proj/build/CMakeFiles/my_shell.dir
-/home/vsacchetto/CNAM_Projects/Minishell_Proj/build/CMakeFiles/doc.dir
-/home/vsacchetto/CNAM_Projects/Minishell_Proj/build/CMakeFiles/edit_cache.dir
-/home/vsacchetto/CNAM_Projects/Minishell_Proj/build/CMakeFiles/rebuild_cache.dir
