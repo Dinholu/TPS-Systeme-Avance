@@ -19,7 +19,7 @@ Le but de ce projet est de réaliser un shell minimaliste en langage C. Ce shell
 Pour utiliser ce shell, il suffit de cloner le repository et de compiler le programme avec les commandes suivante :
 
 ```bash
-cd Project/Minishell_Proj
+cd Minishell_Proj/
 mkdir build/ && cd build/
 cmake ../Minishelln/
 make
