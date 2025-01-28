@@ -15,6 +15,7 @@ set(SOURCES
     src/parser/parser.c
     src/executor/executor.c
     src/builtins/builtins.c
+    src/history/history.c
 )
 
 # Ajoute les fichiers d'en-tête
@@ -23,6 +24,7 @@ set(HEADERS
     src/parser/parser.h
     src/executor/executor.h
     src/builtins/builtins.h
+    src/history/history.h
 )
 
 # Cible pour créer l'exécutable
