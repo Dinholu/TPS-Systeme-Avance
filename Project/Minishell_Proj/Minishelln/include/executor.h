@@ -2,13 +2,13 @@
 #define EXECUTOR_H
 
 /**
- * Exécute une commande.
+ * @brief Exécute une commande.
  * @param args Tableau d'arguments de la commande.
  */
 void execute_command(char **args);
 
 /**
- * Exécute une série de commandes séparées par des pipes.
+ * @brief Exécute une série de commandes séparées par des pipes.
  * @param commands Tableau de commandes.
  */
 void execute_piped_commands(char **commands);

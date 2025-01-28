@@ -10,7 +10,7 @@
 #define PROMPT "vlad_alizee_shell> "
 
 /**
- * Vérifie si une commande est un built-in et l'exécute si c'est le cas.
+ * @brief Vérifie si une commande est un built-in et l'exécute si c'est le cas.
  * @param args Tableau d'arguments de la commande.
  * @return -1 si un built-in a été exécuté, 0 sinon.
  */
@@ -27,7 +27,7 @@ int is_builtin(char **args) {
 }
 
 /**
- * Fonction principale du shell.
+ * @brief Fonction principale du shell.
  * Boucle principale qui lit les commandes de l'utilisateur,
  * les analyse, et les exécute.
  * @param args Tableau d'arguments de la commande.

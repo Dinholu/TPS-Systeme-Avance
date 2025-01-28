@@ -7,7 +7,7 @@
 #define MAX_PIPE_SEGMENTS 16
 
 /**
- * Structure représentant une variable d'environnement.
+ * @brief Structure représentant une variable d'environnement.
  */
 typedef struct {
   char *name;
@@ -15,7 +15,7 @@ typedef struct {
 } EnvVar;
 
 /**
- * Structure représentant un alias.
+ * @brief Structure représentant un alias.
  */
 typedef struct {
   char *alias;
