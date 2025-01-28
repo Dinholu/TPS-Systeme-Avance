@@ -4,26 +4,26 @@
 /**
  * @brief Change le répertoire courant.
  * @param args Tableau d'arguments de la commande.
- * @return 0 si la commande a été exécutée, 1 sinon.
+ * @return 0 si la commande a été exécutée, -1 sinon.
  */
 int builtin_cd(char **args);
 
 /**
  * @brief Affiche le répertoire courant.
- * @return 0 si la commande a été exécutée, 1 sinon.
+ * @return 0 si la commande a été exécutée, -1 sinon.
  */
 int builtin_pwd();
 
 /**
  * @brief Quitte le shell.
- * @return 0 si la commande a été exécutée, 1 sinon.
+ * @return 0 si la commande a été exécutée, -1 sinon.
  */
 int builtin_exit();
 
 /**
  * @brief Affiche les arguments passés en paramètre.
  * @param args Tableau d'arguments de la commande.
- * @return 0 si la commande a été exécutée, 1 sinon.
+ * @return 0 si la commande a été exécutée, -1 sinon.
  */
 int builtin_echo(char **args);
 
@@ -63,7 +63,7 @@ void expand_variables(char **args);
 
 /**
  * @brief Affiche toutes les variables d'environnement.
- * @return 0 si la commande a été exécutée, 1 sinon.
+ * @return 0 si la commande a été exécutée, -1 sinon.
  */
 int builtin_env();
 
@@ -89,7 +89,7 @@ void unset_alias(const char *alias);
 
 /**
  * @brief Affiche tous les alias.
- * @return 0 si la commande a été exécutée, 1 sinon.
+ * @return 0 si la commande a été exécutée, -1 sinon.
  */
 int builtin_alias();
 
