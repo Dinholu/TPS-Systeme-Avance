@@ -4,11 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/**
- * Parse une commande pour obtenir les arguments.
- * @param command Commande à parser.
- * @return Tableau d'arguments de la commande.
- */
 char **parse_command(const char *command) {
   char **args = malloc(MAX_ARGS * sizeof(char *));
   if (!args) {
@@ -38,11 +33,6 @@ char **parse_command(const char *command) {
   return args;
 }
 
-/**
- * Sépare une commande en segments séparés par des pipes.
- * @param command Commande à séparer.
- * @return Tableau de segments.
- */
 char **split_pipes(const char *command) {
   char **segments = malloc(MAX_PIPE_SEGMENTS * sizeof(char *));
   if (!segments) {

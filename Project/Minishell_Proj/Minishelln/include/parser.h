@@ -2,10 +2,10 @@
 #define PARSER_H
 
 /**
- * @brief Parse une commande en arguments.
+ * @brief Parse une commande pour obtenir les arguments.
  *
  * @param command Commande à parser.
- * @return Tableau de chaînes représentant les arguments.
+ * @return Tableau d'arguments de la commande.
  */
 char **parse_command(const char *command);
 
