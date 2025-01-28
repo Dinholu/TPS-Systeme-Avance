@@ -9,9 +9,9 @@
 docker pull jenkins/jenkins:lts-jdk17
 ```
 
-![pull jenkins](image.png)
+![pull jenkins](ressources/image-0.png)
 
-![Liste conteneur](image-1.png)
+![Liste conteneur](ressources/image-1.png)
 
 
 2. Démarrage du conteneur 
@@ -20,11 +20,11 @@ docker pull jenkins/jenkins:lts-jdk17
 docker run -it -p 8080:8080 -p 5000:5000 jenkins/jenkins:lts-jdk17
 ```
 
-![alt text](image-3.png)
+![run jenkins](ressources/image-3.png)
 
 Après avoir mis le mdp et installer les ressources
 
-![alt text](image-4.png)
+![run terminal](ressources/image-4.png)
 
 
 3. La vérification de la disponibilité du service
@@ -32,7 +32,7 @@ Après avoir mis le mdp et installer les ressources
 ```bash 
 docker ps -a
 ``` 
-![alt text](image-5.png)
+![docker ps](ressources/image-5.png)
 
 4. L'arrêt du conteneur 
 
@@ -40,9 +40,38 @@ docker ps -a
 docker stop jenkins-container
 ``` 
 
-![alt text](image-6.png)
+![docker stop](ressources/image-6.png)
 
 
 
 ## Service from Scratch
+
+1. Récupération des données 
+
+```bash 
+docker pull tomcat:jdk17
+```
+
+![alt text](ressources/image-7.png)
+
+2. Création du DockerFile 
+
+![alt text](ressources/image.png)
+
+3. Création de l'image et deploiement
+
+```bash 
+docker build -t jenkins:1.0 .
+```
+
+
+4. Test du services
+
+```bash 
+docker run -it -p 8080:8080 jenkins:1.1
+``` 
+
+Et après téléchager les outils et mis le mdp spécifié 
+![alt text](ressources/image-8.png)
+
 
