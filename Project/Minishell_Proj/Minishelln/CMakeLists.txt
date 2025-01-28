@@ -11,25 +11,25 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -g")
 
 # Ajoute les fichiers source
 set(SOURCES
-    main.c
-    parser.c
-    executor.c
-    builtins.c
+    src/main.c
+    src/parser/parser.c
+    src/executor/executor.c
+    src/builtins/builtins.c
 )
 
 # Ajoute les fichiers d'en-tête
 set(HEADERS
-    typedef.h
-    parser.h
-    executor.h
-    builtins.h
+    src/typedef.h
+    src/parser/parser.h
+    src/executor/executor.h
+    src/builtins/builtins.h
 )
 
 # Cible pour créer l'exécutable
-add_executable(my_shell ${SOURCES} ${HEADERS})
+add_executable(minishell ${SOURCES} ${HEADERS})
 
 # Ajoute des options spécifiques (optionnel)
-target_include_directories(my_shell PRIVATE ${CMAKE_SOURCE_DIR})
+target_include_directories(minishell PRIVATE ${CMAKE_SOURCE_DIR})
 
 # Ajout de commandes Doxygen pour la documentation (optionnel)
 find_package(Doxygen)

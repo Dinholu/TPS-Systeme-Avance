@@ -1,8 +1,8 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g
-SRC = main.c parser.c executor.c builtins.c
+SRC = src/main.c src/parser/parser.c src/executor/executor.c src/builtins/builtins.c
 OBJ = $(SRC:.c=.o)
-EXEC = my_shell
+EXEC = minishell
 
 all: $(EXEC)
 
