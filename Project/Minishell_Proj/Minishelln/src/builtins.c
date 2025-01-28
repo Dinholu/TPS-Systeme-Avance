@@ -4,6 +4,52 @@
 #include <string.h>
 #include <unistd.h>
 
+// Commandes intégrées
+int builtin_cd(char **args) {
+  if (!args[1]) {
+    fprintf(stderr, "cd: missing argument\n");
+    return -1;
+  }
+  if (chdir(args[1]) != 0) {
+    perror("cd");
+    return -1;
+  }
+  return 0;
+}
+
+int builtin_pwd() {
+  char cwd[1024];
+  if (getcwd(cwd, sizeof(cwd)) == NULL) {
+    perror("pwd");
+    return -1;
+  }
+  printf("%s\n", cwd);
+  return 0;
+}
+
+int builtin_echo(char **args) {
+  for (int i = 1; args[i]; i++) {
+    if (args[i][0] == '"' && args[i][strlen(args[i]) - 1] == '"') {
+      args[i][strlen(args[i]) - 1] = '\0';
+      printf("%s", args[i] + 1);
+    } else {
+      printf("%s", args[i]);
+    }
+
+    if (args[i + 1]) {
+      printf(" ");
+    }
+  }
+  printf("\n");
+  return 0;
+}
+
+int builtin_exit() {
+  printf("Exiting shell... Bye\n");
+  exit(0);
+}
+
+// Variables d'environnement
 EnvVar env_vars[MAX_ENV_VARS];
 int env_count = 0;
 
@@ -67,46 +113,54 @@ int builtin_env() {
   return 0;
 }
 
-int builtin_cd(char **args) {
-  if (!args[1]) {
-    fprintf(stderr, "cd: missing argument\n");
-    return -1;
-  }
-  if (chdir(args[1]) != 0) {
-    perror("cd");
-    return -1;
-  }
-  return 0;
-}
+// Gestion des alias
+Alias aliases[MAX_ALIASES];
+int alias_count = 0;
 
-int builtin_pwd() {
-  char cwd[1024];
-  if (getcwd(cwd, sizeof(cwd)) == NULL) {
-    perror("pwd");
-    return -1;
-  }
-  printf("%s\n", cwd);
-  return 0;
-}
-
-int builtin_echo(char **args) {
-  for (int i = 1; args[i]; i++) {
-    if (args[i][0] == '"' && args[i][strlen(args[i]) - 1] == '"') {
-      args[i][strlen(args[i]) - 1] = '\0';
-      printf("%s", args[i] + 1);
-    } else {
-      printf("%s", args[i]);
-    }
-
-    if (args[i + 1]) {
-      printf(" ");
+void set_alias(const char *alias, const char *command) {
+  for (int i = 0; i < alias_count; i++) {
+    if (strcmp(aliases[i].alias, alias) == 0) {
+      free(aliases[i].command);
+      aliases[i].command = strdup(command);
+      return;
     }
   }
-  printf("\n");
-  return 0;
+
+  if (alias_count < MAX_ALIASES) {
+    aliases[alias_count].alias = strdup(alias);
+    aliases[alias_count].command = strdup(command);
+    alias_count++;
+  } else {
+    fprintf(stderr, "Maximum alias limit reached.\n");
+  }
 }
 
-int builtin_exit() {
-  printf("Exiting shell... Bye\n");
-  exit(0);
+char *get_alias(const char *alias) {
+  for (int i = 0; i < alias_count; i++) {
+    if (strcmp(aliases[i].alias, alias) == 0) {
+      return aliases[i].command;
+    }
+  }
+  return NULL;
+}
+
+void unset_alias(const char *alias) {
+  for (int i = 0; i < alias_count; i++) {
+    if (strcmp(aliases[i].alias, alias) == 0) {
+      free(aliases[i].alias);
+      free(aliases[i].command);
+      for (int j = i; j < alias_count - 1; j++) {
+        aliases[j] = aliases[j + 1];
+      }
+      alias_count--;
+      return;
+    }
+  }
+}
+
+int builtin_alias() {
+  for (int i = 0; i < alias_count; i++) {
+    printf("alias %s='%s'\n", aliases[i].alias, aliases[i].command);
+  }
+  return 0;
 }

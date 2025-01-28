@@ -23,7 +23,7 @@ int is_builtin(char **args) {
     return builtin_exit();
   if (strcmp(args[0], "echo") == 0)
     return builtin_echo(args);
-  return -1; // Not a built-in command
+  return -1; // Pas une commande built-in
 }
 
 /**
@@ -69,6 +69,40 @@ int main(int argc, char *argv[]) {
 
     add_to_history(command);
 
+    // Vérifie si la commande est un alias
+    if (strncmp(command, "alias ", 6) == 0) {
+      char *alias_def = command + 6;
+      char *equals_sign = strchr(alias_def, '=');
+
+      if (equals_sign) {
+        *equals_sign = '\0';
+        char *alias_name = alias_def;
+        char *alias_value = equals_sign + 1;
+
+        if (alias_value[0] == '"' &&
+            alias_value[strlen(alias_value) - 1] == '"') {
+          alias_value[strlen(alias_value) - 1] = '\0';
+          alias_value++;
+        }
+        set_alias(alias_name, alias_value);
+      } else {
+        fprintf(stderr, "alias: invalid syntax\n");
+      }
+      continue;
+    }
+
+    if (strncmp(command, "unalias ", 8) == 0) {
+      unset_alias(command + 8);
+      continue;
+    }
+
+    // Appel de l'alias si la commande est un alias
+    char *alias_expansion = get_alias(command);
+    if (alias_expansion) {
+      printf("Executing alias: %s -> %s\n", command, alias_expansion);
+      strcpy(command, alias_expansion);
+    }
+
     // Vérifie si la commande est une assignation de variable
     char *equal_sign = strchr(command, '=');
     if (equal_sign && (equal_sign != command) && strchr(command, ' ') == NULL) {
@@ -83,7 +117,7 @@ int main(int argc, char *argv[]) {
       }
 
       set_env_var(name, value);
-      continue; // Skip further execution for variable assignments
+      continue;
     }
 
     // Vérifie si la commande est une suppression de variable
@@ -114,6 +148,12 @@ int main(int argc, char *argv[]) {
 
       if (strcmp(args[0], "env") == 0) {
         builtin_env();
+        free(args);
+        continue;
+      }
+
+      if (strcmp(args[0], "aliases") == 0) {
+        builtin_alias();
         free(args);
         continue;
       }

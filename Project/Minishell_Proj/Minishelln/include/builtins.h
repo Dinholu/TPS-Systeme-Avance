@@ -2,6 +2,32 @@
 #define BUILTINS_H
 
 /**
+ * Change le répertoire courant.
+ * @param args Tableau d'arguments de la commande.
+ * @return 0 si la commande a été exécutée, 1 sinon.
+ */
+int builtin_cd(char **args);
+
+/**
+ * Affiche le répertoire courant.
+ * @return 0 si la commande a été exécutée, 1 sinon.
+ */
+int builtin_pwd();
+
+/**
+ * Quitte le shell.
+ * @return 0 si la commande a été exécutée, 1 sinon.
+ */
+int builtin_exit();
+
+/**
+ * Affiche les arguments passés en paramètre.
+ * @param args Tableau d'arguments de la commande.
+ * @return 0 si la commande a été exécutée, 1 sinon.
+ */
+int builtin_echo(char **args);
+
+/**
  * Recherche une variable d'environnement.
  * @param name Nom de la variable à rechercher.
  * @return Indice de la variable dans le tableau d'environnement, -1 si non
@@ -42,29 +68,29 @@ void expand_variables(char **args);
 int builtin_env();
 
 /**
- * Change le répertoire courant.
- * @param args Tableau d'arguments de la commande.
- * @return 0 si la commande a été exécutée, 1 sinon.
+ * Recherche un alias.
+ * @param alias Alias à rechercher.
+ * @return Commande associée à l'alias, NULL si non trouvé.
  */
-int builtin_cd(char **args);
+void set_alias(const char *alias, const char *command);
 
 /**
- * Affiche le répertoire courant.
- * @return 0 si la commande a été exécutée, 1 sinon.
+ * Ajoute ou modifie un alias.
+ * @param alias Alias à ajouter ou modifier.
+ * @param command Commande associée à l'alias.
  */
-int builtin_pwd();
+char *get_alias(const char *alias);
 
 /**
- * Quitte le shell.
- * @return 0 si la commande a été exécutée, 1 sinon.
+ * Supprime un alias.
+ * @param alias Alias à supprimer.
  */
-int builtin_exit();
+void unset_alias(const char *alias);
 
 /**
- * Affiche les arguments passés en paramètre.
- * @param args Tableau d'arguments de la commande.
+ * Affiche tous les alias.
  * @return 0 si la commande a été exécutée, 1 sinon.
  */
-int builtin_echo(char **args);
+int builtin_alias();
 
 #endif // BUILTINS_H
