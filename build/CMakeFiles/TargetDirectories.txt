@@ -1,0 +1,3 @@
+/home/alizee/Documents/TP1-syteme-avancee/build/CMakeFiles/my_shell.dir
+/home/alizee/Documents/TP1-syteme-avancee/build/CMakeFiles/edit_cache.dir
+/home/alizee/Documents/TP1-syteme-avancee/build/CMakeFiles/rebuild_cache.dir

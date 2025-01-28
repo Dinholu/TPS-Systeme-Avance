@@ -1,3 +1,4 @@
 {
-    "makefile.configureOnOpen": false
+    "makefile.configureOnOpen": false,
+    "cmake.sourceDirectory": "/home/alizee/Documents/TP1-syteme-avancee/Project/Minishell_Proj/Minishelln"
 }
