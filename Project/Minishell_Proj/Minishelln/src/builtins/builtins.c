@@ -16,10 +16,6 @@ int builtin_cd(char **args) {
 }
 
 int builtin_pwd() {
-  static int call_count = 0;
-  call_count++;
-  fprintf(stderr, "[DEBUG] builtin_pwd called: %d times\n", call_count);
-
   char cwd[1024];
   if (getcwd(cwd, sizeof(cwd)) == NULL) {
     perror("pwd");
@@ -30,10 +26,6 @@ int builtin_pwd() {
 }
 
 int builtin_echo(char **args) {
-  static int call_count = 0;
-  call_count++;
-  fprintf(stderr, "[DEBUG] builtin_echo called: %d times\n", call_count);
-
   for (int i = 1; args[i]; i++) {
     printf("%s", args[i]);
     if (args[i + 1]) {

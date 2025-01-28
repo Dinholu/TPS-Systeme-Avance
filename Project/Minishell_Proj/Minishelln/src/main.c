@@ -64,7 +64,7 @@ int main() {
 
       // Exécute un built-in ou une commande système
       if (args[0]) {
-        if (is_builtin(args)) {
+        if (!is_builtin(args)) {
           continue;
         }
         execute_command(args);
