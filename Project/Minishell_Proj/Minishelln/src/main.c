@@ -1,7 +1,7 @@
-#include "src/builtins/builtins.h"
-#include "src/executor/executor.h"
-#include "src/parser/parser.h"
-#include "src/history/history.h"
+#include "include/builtins.h"
+#include "include/executor.h"
+#include "include/history.h"
+#include "include/parser.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,7 +24,7 @@ int is_builtin(char **args)
     return builtin_exit();
   if (strcmp(args[0], "echo") == 0)
     return builtin_echo(args);
-  return 0; // Pas un built-in
+  return 1; // Pas un built-in
 }
 
 /**

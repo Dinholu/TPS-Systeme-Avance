@@ -1,4 +1,4 @@
-#include "src/parser/parser.h"
+#include "include/parser.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,7 +6,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-
 
 void execute_command(char **args) {
   int fd_out = -1;
@@ -35,6 +34,7 @@ void execute_command(char **args) {
       dup2(fd_out, STDOUT_FILENO);
       close(fd_out);
     }
+
     if (execvp(args[0], args) == -1) {
       perror("execvp");
       exit(EXIT_FAILURE);
@@ -75,10 +75,8 @@ void execute_piped_commands(char **commands) {
 
       // Parse la commande pour obtenir les arguments
       char **args = parse_command(commands[i]);
-      /* for (int j = 0; args[j] != NULL; j++) {
-        printf("Arg[%d]: %s\n", j, args[j]);
-      } */
 
+      execvp(args[0], args);
       if (execvp(args[0], args) == -1) {
         perror("execvp");
         exit(EXIT_FAILURE);

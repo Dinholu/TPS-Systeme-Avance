@@ -12,19 +12,19 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -g")
 # Ajoute les fichiers source
 set(SOURCES
     src/main.c
-    src/parser/parser.c
-    src/executor/executor.c
-    src/builtins/builtins.c
-    src/history/history.c
+    src/parser.c
+    src/executor.c
+    src/builtins.c
+    src/history.c
 )
 
 # Ajoute les fichiers d'en-tête
 set(HEADERS
-    src/typedef.h
-    src/parser/parser.h
-    src/executor/executor.h
-    src/builtins/builtins.h
-    src/history/history.h
+    include/typedef.h
+    include/parser.h
+    include/executor.h
+    include/builtins.h
+    include/history.h
 )
 
 # Cible pour créer l'exécutable
