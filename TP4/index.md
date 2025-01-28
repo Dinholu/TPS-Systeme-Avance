@@ -72,6 +72,7 @@ docker run -it -p 8080:8080 jenkins:1.1
 ``` 
 
 Et après téléchager les outils et mis le mdp spécifié 
+
 ![alt text](ressources/image-8.png)
 
 
