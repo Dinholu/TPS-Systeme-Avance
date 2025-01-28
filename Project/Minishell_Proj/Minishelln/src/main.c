@@ -2,6 +2,7 @@
 #include "include/executor.h"
 #include "include/history.h"
 #include "include/parser.h"
+#include "include/typedef.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +12,7 @@
 /**
  * Vérifie si une commande est un built-in et l'exécute si c'est le cas.
  * @param args Tableau d'arguments de la commande.
- * @return 1 si un built-in a été exécuté, 0 sinon.
+ * @return -1 si un built-in a été exécuté, 0 sinon.
  */
 int is_builtin(char **args) {
   if (strcmp(args[0], "cd") == 0)
@@ -22,17 +23,18 @@ int is_builtin(char **args) {
     return builtin_exit();
   if (strcmp(args[0], "echo") == 0)
     return builtin_echo(args);
-  return 2; // Pas un built-in
+  return -1; // Not a built-in command
 }
 
 /**
  * Fonction principale du shell.
  * Boucle principale qui lit les commandes de l'utilisateur,
  * les analyse, et les exécute.
+ * @param args Tableau d'arguments de la commande.
  */
 int main(int argc, char *argv[]) {
   // Mode batch
-  if (argc <= 3 && strcmp(argv[1], "-c") == 0) {
+  if (argc == 3 && argv[1] && strcmp(argv[1], "-c") == 0) {
     char **args = parse_command(argv[2]);
     if (args[0]) {
       if (!is_builtin(args)) {
@@ -66,6 +68,30 @@ int main(int argc, char *argv[]) {
     }
 
     add_to_history(command);
+
+    // Vérifie si la commande est une assignation de variable
+    char *equal_sign = strchr(command, '=');
+    if (equal_sign && (equal_sign != command) && strchr(command, ' ') == NULL) {
+      *equal_sign = '\0';
+      char *name = command;
+      char *value = equal_sign + 1;
+
+      // Gestion des variables d'environnement entre guillemets
+      if (value[0] == '"' && value[strlen(value) - 1] == '"') {
+        value[strlen(value) - 1] = '\0';
+        value++;
+      }
+
+      set_env_var(name, value);
+      continue; // Skip further execution for variable assignments
+    }
+
+    // Vérifie si la commande est une suppression de variable
+    if (strncmp(command, "unset ", 6) == 0) {
+      unset_env_var(command + 6);
+      continue;
+    }
+
     // Gestion des pipes : séparation de la commande en segments
     char **pipes = split_pipes(command);
 
@@ -79,13 +105,28 @@ int main(int argc, char *argv[]) {
     } else {
       // Si pas de pipes, analyse et exécution normale
       char **args = parse_command(command);
+      if (!args) {
+        fprintf(stderr, "Error: Command parsing failed.\n");
+        continue;
+      }
+
+      expand_variables(args);
+
+      if (strcmp(args[0], "env") == 0) {
+        builtin_env();
+        free(args);
+        continue;
+      }
 
       // Exécute un built-in ou une commande système
       if (args[0]) {
-        if (!is_builtin(args)) {
+        int builtin_status = is_builtin(args);
+        if (builtin_status == 0) { // Commande built-in exécutée
+          free(args);
           continue;
+        } else if (builtin_status == -1) { // Pas un built-in
+          execute_command(args);
         }
-        execute_command(args);
       }
 
       // Libère la mémoire utilisée pour les arguments
