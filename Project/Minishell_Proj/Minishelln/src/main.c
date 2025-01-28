@@ -24,7 +24,7 @@ int is_builtin(char **args)
     return builtin_exit();
   if (strcmp(args[0], "echo") == 0)
     return builtin_echo(args);
-  return 0; // Pas un built-in
+  return 1; // Pas un built-in
 }
 
 /**
