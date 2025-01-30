@@ -7,7 +7,31 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PROMPT "vlad_alizee_shell> "
+// #define PROMPT "vlad_alizee_shell> "
+#define PROMPT "shell> "
+
+void execute_with_control_operators(const char *input) {
+  CommandNode commands[MAX_COMMANDS];
+  int command_count = parse_control_operators(input, commands);
+  int success = 0;
+
+  for (int i = 0; i < command_count; i++) {
+    // Skip command execution based on previous control operator
+    if (i > 0) {
+      if (commands[i - 1].type == CMD_AND && !success) {
+        continue; // Skip execution if the previous command failed for `&&`
+      }
+      if (commands[i - 1].type == CMD_OR && success) {
+        continue; // Skip execution if the previous command succeeded for `||`
+      }
+    }
+
+    // Exécute la commande et vérifie le succès
+    success = execute_logic_command(commands[i].command) == 0;
+
+    free(commands[i].command);
+  }
+}
 
 /**
  * @brief Vérifie si une commande est un built-in et l'exécute si c'est le cas.
@@ -47,7 +71,7 @@ int main(int argc, char *argv[]) {
   }
   if (argc > 3 || (argc == 3 && strcmp(argv[1], "-c") != 0)) {
     fprintf(stderr, "Usage: %s [-c command]\n", argv[0]);
-    return 1;
+    return -1;
   }
 
   // Mode interactif

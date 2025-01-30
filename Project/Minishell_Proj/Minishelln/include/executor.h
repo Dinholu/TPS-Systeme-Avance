@@ -8,6 +8,13 @@
 void execute_command(char **args);
 
 /**
+ * @brief Exécute une commande logique.
+ * @param command Commande logique.
+ * @return 0 si la commande est vraie, -1 sinon.
+ */
+int execute_logic_command(const char *command);
+
+/**
  * @brief Exécute une série de commandes séparées par des pipes.
  * @param commands Tableau de commandes.
  */

@@ -40,11 +40,29 @@ void execute_command(char **args) {
       exit(EXIT_FAILURE);
     }
   } else {
-    // Processus père : Attend que le fils termine
+    // Processus parent : Attend que le fils termine
     int status;
     if (waitpid(pid, &status, 0) == -1) {
       perror("waitpid");
     }
+  }
+}
+
+int execute_logic_command(const char *command) {
+  pid_t pid = fork();
+  int status;
+
+  if (pid == 0) {
+    // Processus fils
+    execlp("/bin/sh", "sh", "-c", command, (char *)NULL);
+    exit(EXIT_FAILURE); // In case exec fails
+  } else if (pid < 0) {
+    perror("fork");
+    return -1;
+  } else {
+    // Processus parent
+    waitpid(pid, &status, 0);
+    return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
   }
 }
 
@@ -82,7 +100,7 @@ void execute_piped_commands(char **commands) {
         exit(EXIT_FAILURE);
       }
     } else {
-      // Processus père
+      // Processus parent
       waitpid(pid, NULL, 0); // Attend le fils
       close(pipefd[1]);
       fd_in =
