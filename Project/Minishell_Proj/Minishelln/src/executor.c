@@ -52,7 +52,10 @@ void execute_command(char **args) {
       dup2(fd_out, STDOUT_FILENO);
       close(fd_out);
     }
-
+    if (fd_in != -1) {
+      dup2(fd_in, STDIN_FILENO);
+      close(fd_in);
+    }
     if (execvp(args[0], args) == -1) {
       perror("execvp");
       exit(EXIT_FAILURE);
