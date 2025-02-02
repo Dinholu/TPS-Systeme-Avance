@@ -62,6 +62,10 @@ void execute_commands_with_logic(const char *input) {
     char **args = parse_command(commands[i].command);
     if (contains_redirection(args)) {
       execute_command(args);
+      success = 1;
+      free(args);
+      free(commands[i].command);
+      continue;
     }
     if (args[0] == NULL) {
       continue;
