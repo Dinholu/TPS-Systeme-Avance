@@ -82,7 +82,8 @@ void execute_commands_with_logic(const char *input) {
     }
 
     // Vérifie si la commande est un built-in
-    expand_variables(args);
+    expand_env_variables(args);
+    expand_alias(args);
     int builtin_status = is_builtin(args);
     if (builtin_status == 0) {
       free(args);

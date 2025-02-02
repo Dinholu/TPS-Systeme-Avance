@@ -91,7 +91,7 @@ void unset_env_var(const char *name) {
   }
 }
 
-void expand_variables(char **args) {
+void expand_env_variables(char **args) {
   for (int i = 0; args[i]; i++) {
     if (args[i][0] == '$' && strlen(args[i]) > 1) {
       char *var_name = args[i] + 1;
@@ -167,4 +167,17 @@ int builtin_alias() {
     printf("No aliases defined.\n");
   }
   return 0;
+}
+
+void expand_alias(char **args) {
+  for (int i = 0; args[i]; i++) {
+    if (args[i][0] == '$' && strlen(args[i]) > 1) {
+      char *alias_name = args[i] + 1;
+      char *value = get_alias(alias_name);
+      if (value) {
+        free(args[i]);
+        args[i] = strdup(value);
+      }
+    }
+  }
 }

@@ -59,7 +59,13 @@ void unset_env_var(const char *name);
  * @brief Remplace les variables d'environnement dans les arguments.
  * @param args Tableau d'arguments de la commande.
  */
-void expand_variables(char **args);
+void expand_env_variables(char **args);
+
+/**
+ * @brief Remplace les alias dans les arguments.
+ * @param args Tableau d'arguments de la commande.
+ */
+void expand_alias(char **args);
 
 /**
  * @brief Affiche toutes les variables d'environnement.
