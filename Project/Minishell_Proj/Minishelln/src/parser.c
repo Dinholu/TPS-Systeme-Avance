@@ -1,8 +1,48 @@
+#include "include/parser.h"
 #include "include/typedef.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+int parse_control_operators(const char *input, CommandNode commands[]) {
+  int count = 0;
+  const char *ptr = input;
+  char buffer[1024];
+  int buf_index = 0;
+
+  while (*ptr && count < MAX_COMMANDS) {
+    // Reset du buffer
+    buf_index = 0;
+
+    while (*ptr == ' ')
+      ptr++;
+
+    // Lire la commande jusqu'à la prochaine opérateur de contrôle
+    while (*ptr && !(strncmp(ptr, "&&", 2) == 0 || strncmp(ptr, "||", 2) == 0)) {
+      buffer[buf_index++] = *ptr++;
+    }
+
+    buffer[buf_index] = '\0';
+    if (buf_index > 0) {
+      commands[count].command = strdup(buffer);
+      commands[count].type = CMD_NONE;
+      count++;
+    }
+
+    // Detecter l'opérateur de contrôle
+    if (strncmp(ptr, "&&", 2) == 0) {
+      commands[count - 1].type = CMD_AND;
+      ptr += 2;
+    } else if (strncmp(ptr, "||", 2) == 0) {
+      commands[count - 1].type = CMD_OR;
+      ptr += 2;
+    }
+
+  }
+
+  return count;
+}
 
 char **parse_command(const char *command) {
   char **args = malloc(MAX_ARGS * sizeof(char *));
@@ -21,8 +61,8 @@ char **parse_command(const char *command) {
   int i = 0;
   while (token && i < MAX_ARGS - 1) {
     if (token[0] == '"' && token[strlen(token) - 1] == '"') {
-      token[strlen(token) - 1] = '\0'; // Supprime le guillemet de fin
-      token++;                         // Supprime le guillemet de début
+      token[strlen(token) - 1] = '\0';
+      token++;
     }
     args[i++] = strdup(token);
     token = strtok(NULL, " ");
@@ -56,4 +96,15 @@ char **split_pipes(const char *command) {
 
   free(cmd_copy);
   return segments;
+}
+
+int is_background_command(char **args) {
+  for (int i = 0; args[i]; i++) {
+    if (strcmp(args[i], "&") == 0) {
+      free(args[i]); 
+      args[i] = NULL;
+      return 1;
+    }
+  }
+  return 0;
 }

@@ -91,16 +91,14 @@ void unset_env_var(const char *name) {
   }
 }
 
-void expand_variables(char **args) {
+void expand_env_variables(char **args) {
   for (int i = 0; args[i]; i++) {
-    if (args[i][0] == '$') {
+    if (args[i][0] == '$' && strlen(args[i]) > 1) {
       char *var_name = args[i] + 1;
       char *value = get_env_var(var_name);
       if (value) {
         free(args[i]);
         args[i] = strdup(value);
-      } else {
-        args[i] = strdup("");
       }
     }
   }
@@ -109,6 +107,9 @@ void expand_variables(char **args) {
 int builtin_env() {
   for (int i = 0; i < env_count; i++) {
     printf("%s=%s\n", env_vars[i].name, env_vars[i].value);
+  }
+  if (env_count == 0) {
+    printf("No environment variables defined.\n");
   }
   return 0;
 }
@@ -162,5 +163,37 @@ int builtin_alias() {
   for (int i = 0; i < alias_count; i++) {
     printf("alias %s='%s'\n", aliases[i].alias, aliases[i].command);
   }
+  if (alias_count == 0) {
+    printf("No aliases defined.\n");
+  }
   return 0;
+}
+
+void expand_alias(char **args) {
+  for (int i = 0; args[i]; i++) {
+    if (args[i][0] == '$' && strlen(args[i]) > 1) {
+      char *alias_name = args[i] + 1;
+      char *value = get_alias(alias_name);
+      if (value) {
+        free(args[i]);
+        args[i] = strdup(value);
+      }
+    }
+  }
+}
+
+int is_builtin(char **args) {
+  if (strcmp(args[0], "cd") == 0)
+    return builtin_cd(args);
+  if (strcmp(args[0], "pwd") == 0)
+    return builtin_pwd();
+  if (strcmp(args[0], "exit") == 0)
+    return builtin_exit();
+  if (strcmp(args[0], "echo") == 0)
+    return builtin_echo(args);
+  if (strcmp(args[0], "env") == 0)
+    return builtin_env();
+  if (strcmp(args[0], "aliases") == 0)
+    return builtin_alias();
+  return -1; // Pas une commande built-in
 }

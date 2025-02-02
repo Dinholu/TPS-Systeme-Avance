@@ -1,53 +1,42 @@
-#include "include/builtins.h"
-#include "include/executor.h"
-#include "include/history.h"
-#include "include/parser.h"
-#include "include/typedef.h"
+#include "../include/builtins.h"
+#include "../include/executor.h"
+#include "../include/history.h"
+#include "../include/parser.h"
+#include "../include/typedef.h"
+#include <sys/types.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <fcntl.h>
 
-#define PROMPT "vlad_alizee_shell> "
-
-/**
- * @brief Vérifie si une commande est un built-in et l'exécute si c'est le cas.
- * @param args Tableau d'arguments de la commande.
- * @return -1 si un built-in a été exécuté, 0 sinon.
- */
-int is_builtin(char **args) {
-  if (strcmp(args[0], "cd") == 0)
-    return builtin_cd(args);
-  if (strcmp(args[0], "pwd") == 0)
-    return builtin_pwd();
-  if (strcmp(args[0], "exit") == 0)
-    return builtin_exit();
-  if (strcmp(args[0], "echo") == 0)
-    return builtin_echo(args);
-  return -1; // Pas une commande built-in
-}
+// #define PROMPT "vlad_alizee_shell> "
+#define PROMPT "shell> "
 
 /**
  * @brief Fonction principale du shell.
  * Boucle principale qui lit les commandes de l'utilisateur,
  * les analyse, et les exécute.
- * @param args Tableau d'arguments de la commande.
+ * @param argc Nombre d'arguments passés au programme.
+ * @param argv Tableau d'arguments passés au programme.
  */
 int main(int argc, char *argv[]) {
   // Mode batch
   if (argc == 3 && argv[1] && strcmp(argv[1], "-c") == 0) {
     char **args = parse_command(argv[2]);
     if (args[0]) {
-      if (!is_builtin(args)) {
-        return 0;
-      }
-      execute_command(args);
+      execute_commands_with_logic(argv[2]);
+      return 0;
+
       free(args);
     }
     return 0; // Sortir du shell après exécution de la commande
   }
+
   if (argc > 3 || (argc == 3 && strcmp(argv[1], "-c") != 0)) {
     fprintf(stderr, "Usage: %s [-c command]\n", argv[0]);
-    return 1;
+    return -1;
   }
 
   // Mode interactif
@@ -66,6 +55,8 @@ int main(int argc, char *argv[]) {
     if (strlen(command) == 0) {
       continue;
     }
+
+    int is_background = check_background_execution(command);
 
     add_to_history(command);
 
@@ -97,10 +88,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Appel de l'alias si la commande est un alias
-    char *alias_expansion = get_alias(command);
-    if (alias_expansion) {
-      printf("Executing alias: %s -> %s\n", command, alias_expansion);
-      strcpy(command, alias_expansion);
+    char **args = parse_command(command);
+    if (args[0]) {
+      char *alias_expansion = get_alias(args[0]);
+      if (alias_expansion) {
+        free(args[0]);
+        args[0] = strdup(alias_expansion);
+      }
     }
 
     // Vérifie si la commande est une assignation de variable
@@ -144,34 +138,25 @@ int main(int argc, char *argv[]) {
         continue;
       }
 
-      expand_variables(args);
-
-      if (strcmp(args[0], "env") == 0) {
-        builtin_env();
-        free(args);
-        continue;
-      }
-
-      if (strcmp(args[0], "aliases") == 0) {
-        builtin_alias();
-        free(args);
-        continue;
-      }
-
-      // Exécute un built-in ou une commande système
-      if (args[0]) {
-        int builtin_status = is_builtin(args);
-        if (builtin_status == 0) { // Commande built-in exécutée
-          free(args);
-          continue;
-        } else if (builtin_status == -1) { // Pas un built-in
-          execute_command(args);
-        }
-      }
+      execute_commands_with_logic(command);
 
       // Libère la mémoire utilisée pour les arguments
       free(args);
     }
+
+    if (is_background) {
+      pid_t pid = fork();
+      if (pid == 0) {
+        // Child process for background execution
+        execute_commands_with_logic(command);
+        exit(0);
+      } else if (pid > 0) {
+        printf("[Background process started] PID: %d\n", pid);
+      } else {
+        perror("fork");
+      }
+    }
+
   }
 
   return 0;

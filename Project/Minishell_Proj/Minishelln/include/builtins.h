@@ -59,7 +59,13 @@ void unset_env_var(const char *name);
  * @brief Remplace les variables d'environnement dans les arguments.
  * @param args Tableau d'arguments de la commande.
  */
-void expand_variables(char **args);
+void expand_env_variables(char **args);
+
+/**
+ * @brief Remplace les alias dans les arguments.
+ * @param args Tableau d'arguments de la commande.
+ */
+void expand_alias(char **args);
 
 /**
  * @brief Affiche toutes les variables d'environnement.
@@ -92,5 +98,12 @@ void unset_alias(const char *alias);
  * @return 0 si la commande a été exécutée, -1 sinon.
  */
 int builtin_alias();
+
+/**
+ * @brief Vérifie si une commande est un built-in et l'exécute si c'est le cas.
+ * @param args Tableau d'arguments de la commande.
+ * @return -1 si un built-in a été exécuté, 0 sinon.
+ */
+int is_builtin(char **args);
 
 #endif // BUILTINS_H
