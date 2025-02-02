@@ -1,15 +1,13 @@
-#include "../include/builtins.h"
-#include "../include/executor.h"
-#include "../include/history.h"
-#include "../include/parser.h"
-#include "../include/typedef.h"
-#include <sys/types.h>
-#include <unistd.h>
+#include "include/builtins.h"
+#include "include/executor.h"
+#include "include/history.h"
+#include "include/parser.h"
+#include "include/typedef.h"
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <fcntl.h>
+#include <unistd.h>
 
 // #define PROMPT "vlad_alizee_shell> "
 #define PROMPT "shell> "
@@ -156,7 +154,6 @@ int main(int argc, char *argv[]) {
         perror("fork");
       }
     }
-
   }
 
   return 0;

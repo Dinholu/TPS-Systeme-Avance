@@ -19,7 +19,8 @@ int parse_control_operators(const char *input, CommandNode commands[]) {
       ptr++;
 
     // Lire la commande jusqu'à la prochaine opérateur de contrôle
-    while (*ptr && !(strncmp(ptr, "&&", 2) == 0 || strncmp(ptr, "||", 2) == 0)) {
+    while (*ptr &&
+           !(strncmp(ptr, "&&", 2) == 0 || strncmp(ptr, "||", 2) == 0)) {
       buffer[buf_index++] = *ptr++;
     }
 
@@ -38,7 +39,6 @@ int parse_control_operators(const char *input, CommandNode commands[]) {
       commands[count - 1].type = CMD_OR;
       ptr += 2;
     }
-
   }
 
   return count;
@@ -101,7 +101,7 @@ char **split_pipes(const char *command) {
 int is_background_command(char **args) {
   for (int i = 0; args[i]; i++) {
     if (strcmp(args[i], "&") == 0) {
-      free(args[i]); 
+      free(args[i]);
       args[i] = NULL;
       return 1;
     }

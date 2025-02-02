@@ -1,5 +1,6 @@
-#include "include/parser.h"
 #include "include/builtins.h"
+#include "include/parser.h"
+#include <ctype.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,7 +8,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <ctype.h>
+
 
 void execute_command(char **args) {
   int fd_out = -1;
@@ -138,17 +139,18 @@ void execute_piped_commands(char **commands) {
             perror("open");
             exit(EXIT_FAILURE);
           }
-          args[j] = NULL;  // Supprimer l'opérateur de redirection et les arguments
+          args[j] =
+              NULL; // Supprimer l'opérateur de redirection et les arguments
           break;
         }
       }
 
       // Rédirection des entrées et sorties
-      dup2(fd_in, STDIN_FILENO);  // Input pour le premier processus
+      dup2(fd_in, STDIN_FILENO); // Input pour le premier processus
       if (commands[i + 1] != NULL) {
         dup2(pipefd[1], STDOUT_FILENO); // Output pour les commandes suivantes
       } else if (fd_out != -1) {
-        dup2(fd_out, STDOUT_FILENO);  // Output vers un fichier si présence de '>' dans la commande
+        dup2(fd_out, STDOUT_FILENO); // Output vers un fichier si présence de '>' dans la commande
       }
 
       close(pipefd[0]);
