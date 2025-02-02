@@ -12,38 +12,33 @@ int parse_control_operators(const char *input, CommandNode commands[]) {
   int buf_index = 0;
 
   while (*ptr && count < MAX_COMMANDS) {
-    // Reset buffer for each command
+    // Reset du buffer
     buf_index = 0;
 
     while (*ptr == ' ')
       ptr++;
 
-    // Read until a control operator or end of input
-    while (*ptr && !((*ptr == '&' && *(ptr + 1) == '&') ||
-                     (*ptr == '|' && *(ptr + 1) == '|'))) {
+    // Lire la commande jusqu'à la prochaine opérateur de contrôle
+    while (*ptr && !(strncmp(ptr, "&&", 2) == 0 || strncmp(ptr, "||", 2) == 0)) {
       buffer[buf_index++] = *ptr++;
     }
 
-    buffer[buf_index] = '\0'; // Null-terminate the command string
-    commands[count].command = strdup(buffer);
-
-    while (commands[count].command[strlen(commands[count].command) - 1] ==
-           ' ') {
-      commands[count].command[strlen(commands[count].command) - 1] = '\0';
-    }
-
-    // Detect control operator type
-    if (*ptr == '&' && *(ptr + 1) == '&') {
-      commands[count].type = CMD_AND;
-      ptr += 2;
-    } else if (*ptr == '|' && *(ptr + 1) == '|') {
-      commands[count].type = CMD_OR;
-      ptr += 2;
-    } else {
+    buffer[buf_index] = '\0';
+    if (buf_index > 0) {
+      commands[count].command = strdup(buffer);
       commands[count].type = CMD_NONE;
+      count++;
     }
 
-    count++;
+    // Detecter l'opérateur de contrôle
+    if (strncmp(ptr, "&&", 2) == 0) {
+      commands[count - 1].type = CMD_AND;
+      ptr += 2;
+    } else if (strncmp(ptr, "||", 2) == 0) {
+      commands[count - 1].type = CMD_OR;
+      ptr += 2;
+    }
+
   }
 
   return count;
@@ -66,8 +61,8 @@ char **parse_command(const char *command) {
   int i = 0;
   while (token && i < MAX_ARGS - 1) {
     if (token[0] == '"' && token[strlen(token) - 1] == '"') {
-      token[strlen(token) - 1] = '\0'; // Supprime le guillemet de fin
-      token++;                         // Supprime le guillemet de début
+      token[strlen(token) - 1] = '\0';
+      token++;
     }
     args[i++] = strdup(token);
     token = strtok(NULL, " ");

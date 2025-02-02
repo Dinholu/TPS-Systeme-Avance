@@ -55,7 +55,7 @@ int execute_logic_command(const char *command) {
   if (pid == 0) {
     // Processus fils
     execlp("/bin/sh", "sh", "-c", command, (char *)NULL);
-    exit(EXIT_FAILURE); // In case exec fails
+    exit(EXIT_FAILURE);
   } else if (pid < 0) {
     perror("fork");
     return -1;

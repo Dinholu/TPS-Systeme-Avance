@@ -93,14 +93,12 @@ void unset_env_var(const char *name) {
 
 void expand_variables(char **args) {
   for (int i = 0; args[i]; i++) {
-    if (args[i][0] == '$') {
+    if (args[i][0] == '$' && strlen(args[i]) > 1) {
       char *var_name = args[i] + 1;
       char *value = get_env_var(var_name);
       if (value) {
         free(args[i]);
         args[i] = strdup(value);
-      } else {
-        args[i] = strdup("");
       }
     }
   }
@@ -109,6 +107,9 @@ void expand_variables(char **args) {
 int builtin_env() {
   for (int i = 0; i < env_count; i++) {
     printf("%s=%s\n", env_vars[i].name, env_vars[i].value);
+  }
+  if (env_count == 0) {
+    printf("No environment variables defined.\n");
   }
   return 0;
 }
@@ -161,6 +162,9 @@ void unset_alias(const char *alias) {
 int builtin_alias() {
   for (int i = 0; i < alias_count; i++) {
     printf("alias %s='%s'\n", aliases[i].alias, aliases[i].command);
+  }
+  if (alias_count == 0) {
+    printf("No aliases defined.\n");
   }
   return 0;
 }

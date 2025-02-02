@@ -1,37 +1,14 @@
-#include "include/builtins.h"
-#include "include/executor.h"
-#include "include/history.h"
-#include "include/parser.h"
-#include "include/typedef.h"
+#include "../include/builtins.h"
+#include "../include/executor.h"
+#include "../include/history.h"
+#include "../include/parser.h"
+#include "../include/typedef.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 // #define PROMPT "vlad_alizee_shell> "
 #define PROMPT "shell> "
-
-void execute_with_control_operators(const char *input) {
-  CommandNode commands[MAX_COMMANDS];
-  int command_count = parse_control_operators(input, commands);
-  int success = 0;
-
-  for (int i = 0; i < command_count; i++) {
-    // Skip command execution based on previous control operator
-    if (i > 0) {
-      if (commands[i - 1].type == CMD_AND && !success) {
-        continue; // Skip execution if the previous command failed for `&&`
-      }
-      if (commands[i - 1].type == CMD_OR && success) {
-        continue; // Skip execution if the previous command succeeded for `||`
-      }
-    }
-
-    // Exécute la commande et vérifie le succès
-    success = execute_logic_command(commands[i].command) == 0;
-
-    free(commands[i].command);
-  }
-}
 
 /**
  * @brief Vérifie si une commande est un built-in et l'exécute si c'est le cas.
@@ -47,28 +24,87 @@ int is_builtin(char **args) {
     return builtin_exit();
   if (strcmp(args[0], "echo") == 0)
     return builtin_echo(args);
+  if (strcmp(args[0], "env") == 0)
+    return builtin_env();
+  if (strcmp(args[0], "aliases") == 0)
+    return builtin_alias();
   return -1; // Pas une commande built-in
+}
+
+int contains_redirection(char **args) {
+  for (int i = 0; args[i]; i++) {
+    if (strcmp(args[i], ">") == 0) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/**
+ * @brief Exécute une série de commandes séparées par des opérateurs logiques.
+ * @param input Commandes séparées par des opérateurs logiques.
+ */
+void execute_commands_with_logic(const char *input) {
+  CommandNode commands[MAX_COMMANDS];
+  int command_count = parse_control_operators(input, commands);
+  int success = 1; // Résultat de la commande précédente
+
+  for (int i = 0; i < command_count; i++) {
+    if (i > 0) {
+      // Sauter l'exécution en fonction du résultat de la commande précédente et de l'opérateur de contrôle
+      if ((commands[i - 1].type == CMD_AND && !success) ||
+          (commands[i - 1].type == CMD_OR && success)) {
+        continue;
+      }
+    }
+
+    // Analyse et gère la redirection de la sortie pour la commande en cours
+    char **args = parse_command(commands[i].command);
+    if (contains_redirection(args)) {
+      execute_command(args);
+    }
+    if (args[0] == NULL) {
+      continue;
+    }
+
+    // Vérifie si la commande est un built-in
+    expand_variables(args);
+    int builtin_status = is_builtin(args);
+    if (builtin_status == 0) {
+      free(args);
+      free(commands[i].command);
+      success = 1;
+      continue;
+    }
+
+    // Exécute la commande externe si ce n'est pas un built-in
+    success = execute_logic_command(commands[i].command) == 0;
+
+    free(args);
+    free(commands[i].command);
+  }
 }
 
 /**
  * @brief Fonction principale du shell.
  * Boucle principale qui lit les commandes de l'utilisateur,
  * les analyse, et les exécute.
- * @param args Tableau d'arguments de la commande.
+ * @param argc Nombre d'arguments passés au programme.
+ * @param argv Tableau d'arguments passés au programme.
  */
 int main(int argc, char *argv[]) {
   // Mode batch
   if (argc == 3 && argv[1] && strcmp(argv[1], "-c") == 0) {
     char **args = parse_command(argv[2]);
     if (args[0]) {
-      if (!is_builtin(args)) {
-        return 0;
-      }
-      execute_command(args);
+      execute_commands_with_logic(argv[2]);
+      return 0;
+
       free(args);
     }
     return 0; // Sortir du shell après exécution de la commande
   }
+
   if (argc > 3 || (argc == 3 && strcmp(argv[1], "-c") != 0)) {
     fprintf(stderr, "Usage: %s [-c command]\n", argv[0]);
     return -1;
@@ -121,10 +157,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Appel de l'alias si la commande est un alias
-    char *alias_expansion = get_alias(command);
-    if (alias_expansion) {
-      printf("Executing alias: %s -> %s\n", command, alias_expansion);
-      strcpy(command, alias_expansion);
+    char **args = parse_command(command);
+    if (args[0]) {
+      char *alias_expansion = get_alias(args[0]);
+      if (alias_expansion) {
+        free(args[0]);
+        args[0] = strdup(alias_expansion);
+      }
     }
 
     // Vérifie si la commande est une assignation de variable
@@ -168,30 +207,7 @@ int main(int argc, char *argv[]) {
         continue;
       }
 
-      expand_variables(args);
-
-      if (strcmp(args[0], "env") == 0) {
-        builtin_env();
-        free(args);
-        continue;
-      }
-
-      if (strcmp(args[0], "aliases") == 0) {
-        builtin_alias();
-        free(args);
-        continue;
-      }
-
-      // Exécute un built-in ou une commande système
-      if (args[0]) {
-        int builtin_status = is_builtin(args);
-        if (builtin_status == 0) { // Commande built-in exécutée
-          free(args);
-          continue;
-        } else if (builtin_status == -1) { // Pas un built-in
-          execute_command(args);
-        }
-      }
+      execute_commands_with_logic(command);
 
       // Libère la mémoire utilisée pour les arguments
       free(args);
