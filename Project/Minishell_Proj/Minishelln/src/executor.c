@@ -9,6 +9,7 @@
 
 void execute_command(char **args) {
   int fd_out = -1;
+  int fd_in = -1;
 
   for (int i = 0; args[i]; i++) {
     if (strcmp(args[i], ">") == 0) {
@@ -22,6 +23,15 @@ void execute_command(char **args) {
     } else if (strcmp(args[i], ">>") == 0) {
       fd_out = open(args[i + 1], O_WRONLY | O_CREAT | O_APPEND, 0644);
       if (fd_out == -1) {
+        perror("open");
+        exit(EXIT_FAILURE);
+      }
+      args[i] = NULL;
+      break;
+    }
+    if (strcmp(args[i], "<") == 0) {
+      fd_in = open(args[i + 1], O_RDONLY);
+      if (fd_in == -1) {
         perror("open");
         exit(EXIT_FAILURE);
       }
