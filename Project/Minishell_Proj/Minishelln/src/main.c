@@ -35,6 +35,8 @@ int contains_redirection(char **args) {
   for (int i = 0; args[i]; i++) {
     if (strcmp(args[i], ">") == 0) {
       return 1;
+    } else if (strcmp(args[i], ">>") == 0) {
+      return 1;
     }
   }
   return 0;
