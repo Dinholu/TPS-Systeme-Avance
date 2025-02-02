@@ -181,3 +181,19 @@ void expand_alias(char **args) {
     }
   }
 }
+
+int is_builtin(char **args) {
+  if (strcmp(args[0], "cd") == 0)
+    return builtin_cd(args);
+  if (strcmp(args[0], "pwd") == 0)
+    return builtin_pwd();
+  if (strcmp(args[0], "exit") == 0)
+    return builtin_exit();
+  if (strcmp(args[0], "echo") == 0)
+    return builtin_echo(args);
+  if (strcmp(args[0], "env") == 0)
+    return builtin_env();
+  if (strcmp(args[0], "aliases") == 0)
+    return builtin_alias();
+  return -1; // Pas une commande built-in
+}

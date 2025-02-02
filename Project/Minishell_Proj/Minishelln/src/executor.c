@@ -1,4 +1,5 @@
 #include "include/parser.h"
+#include "include/builtins.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <ctype.h>
 
 void execute_command(char **args) {
   int fd_out = -1;
@@ -72,6 +74,21 @@ void execute_command(char **args) {
       printf("[Background process started] PID: %d\n", pid);
     }
   }
+}
+
+int contains_redirection(char **args) {
+  for (int i = 0; args[i]; i++) {
+    if (strcmp(args[i], ">") == 0) {
+      return 1;
+    }
+    if (strcmp(args[i], ">>") == 0) {
+      return 1;
+    }
+    if (strcmp(args[i], "<") == 0) {
+      return 1;
+    }
+  }
+  return 0;
 }
 
 int execute_logic_command(const char *command) {
@@ -149,4 +166,64 @@ void execute_piped_commands(char **commands) {
     }
   }
   close(fd_in);
+}
+
+int check_background_execution(char *command) {
+  size_t len = strlen(command);
+  // Supprimer les espaces de fin et vérifier si la commande se termine par '&'
+  while (len > 0 && isspace(command[len - 1])) {
+    command[--len] = '\0';
+  }
+
+  if (len > 0 && command[len - 1] == '&') {
+    command[len - 1] = '\0';
+    return 1;
+  }
+  return 0;
+}
+
+void execute_commands_with_logic(const char *input) {
+  CommandNode commands[MAX_COMMANDS];
+  int command_count = parse_control_operators(input, commands);
+  int success = 1; // Résultat de la commande précédente
+
+  for (int i = 0; i < command_count; i++) {
+    if (i > 0) {
+      // Sauter l'exécution en fonction du résultat de la commande précédente et de l'opérateur de contrôle
+      if ((commands[i - 1].type == CMD_AND && !success) ||
+          (commands[i - 1].type == CMD_OR && success)) {
+        continue;
+      }
+    }
+
+    // Analyse et gère la redirection de la sortie pour la commande en cours
+    char **args = parse_command(commands[i].command);
+    if (contains_redirection(args)) {
+      execute_command(args);
+      success = 1;
+      free(args);
+      free(commands[i].command);
+      continue;
+    }
+    if (args[0] == NULL) {
+      continue;
+    }
+
+    // Vérifie si la commande est un built-in
+    expand_env_variables(args);
+    expand_alias(args);
+    int builtin_status = is_builtin(args);
+    if (builtin_status == 0) {
+      free(args);
+      free(commands[i].command);
+      success = 1;
+      continue;
+    }
+
+    // Exécute la commande externe si ce n'est pas un built-in
+    success = execute_logic_command(commands[i].command) == 0;
+
+    free(args);
+    free(commands[i].command);
+  }
 }
