@@ -28,4 +28,12 @@ char **parse_command(const char *command);
  */
 char **split_pipes(const char *command);
 
+/**
+ * @brief Vérifie si une commande contient des opérateurs de redirection.
+ *
+ * @param args Tableau d'arguments de la commande.
+ * @return 1 si la commande contient des opérateurs de redirection, 0 sinon.
+ */
+int is_background_command(char **args);
+
 #endif // PARSER_H

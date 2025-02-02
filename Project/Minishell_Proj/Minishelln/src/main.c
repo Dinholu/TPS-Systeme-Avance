@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <fcntl.h>
 
 // #define PROMPT "vlad_alizee_shell> "
 #define PROMPT "shell> "
@@ -95,6 +97,20 @@ void execute_commands_with_logic(const char *input) {
   }
 }
 
+int check_background_execution(char *command) {
+  size_t len = strlen(command);
+  // Trim trailing spaces and check if the last non-space character is '&'
+  while (len > 0 && isspace(command[len - 1])) {
+    command[--len] = '\0';
+  }
+
+  if (len > 0 && command[len - 1] == '&') {
+    command[len - 1] = '\0'; // Remove the '&'
+    return 1;
+  }
+  return 0;
+}
+
 /**
  * @brief Fonction principale du shell.
  * Boucle principale qui lit les commandes de l'utilisateur,
@@ -136,6 +152,8 @@ int main(int argc, char *argv[]) {
     if (strlen(command) == 0) {
       continue;
     }
+
+    int is_background = check_background_execution(command);
 
     add_to_history(command);
 
@@ -222,6 +240,20 @@ int main(int argc, char *argv[]) {
       // Libère la mémoire utilisée pour les arguments
       free(args);
     }
+
+    if (is_background) {
+      pid_t pid = fork();
+      if (pid == 0) {
+        // Child process for background execution
+        execute_commands_with_logic(command);
+        exit(0);
+      } else if (pid > 0) {
+        printf("[Background process started] PID: %d\n", pid);
+      } else {
+        perror("fork");
+      }
+    }
+
   }
 
   return 0;

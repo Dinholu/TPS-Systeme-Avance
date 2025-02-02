@@ -97,3 +97,14 @@ char **split_pipes(const char *command) {
   free(cmd_copy);
   return segments;
 }
+
+int is_background_command(char **args) {
+  for (int i = 0; args[i]; i++) {
+    if (strcmp(args[i], "&") == 0) {
+      free(args[i]); 
+      args[i] = NULL;
+      return 1;
+    }
+  }
+  return 0;
+}

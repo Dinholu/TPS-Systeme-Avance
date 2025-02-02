@@ -10,6 +10,7 @@
 void execute_command(char **args) {
   int fd_out = -1;
   int fd_in = -1;
+  int background = is_background_command(args);
 
   for (int i = 0; args[i]; i++) {
     if (strcmp(args[i], ">") == 0) {
@@ -61,10 +62,14 @@ void execute_command(char **args) {
       exit(EXIT_FAILURE);
     }
   } else {
-    // Processus parent : Attend que le fils termine
-    int status;
-    if (waitpid(pid, &status, 0) == -1) {
-      perror("waitpid");
+    if (!background) {
+      // Processus parent : Attend que le fils termine
+      int status;
+      if (waitpid(pid, &status, 0) == -1) {
+        perror("waitpid");
+      }
+    } else {
+      printf("[Background process started] PID: %d\n", pid);
     }
   }
 }
