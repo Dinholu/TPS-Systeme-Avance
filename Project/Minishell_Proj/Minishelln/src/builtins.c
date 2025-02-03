@@ -119,6 +119,11 @@ Alias aliases[MAX_ALIASES];
 int alias_count = 0;
 
 void set_alias(const char *alias, const char *command) {
+  if (strcmp(alias, command) == 0) {
+    fprintf(stderr, "alias: cannot create recursive alias\n");
+    return;
+  }
+
   for (int i = 0; i < alias_count; i++) {
     if (strcmp(aliases[i].alias, alias) == 0) {
       free(aliases[i].command);
@@ -170,15 +175,20 @@ int builtin_alias() {
 }
 
 void expand_alias(char **args) {
-  for (int i = 0; args[i]; i++) {
-    if (args[i][0] == '$' && strlen(args[i]) > 1) {
-      char *alias_name = args[i] + 1;
-      char *value = get_alias(alias_name);
-      if (value) {
-        free(args[i]);
-        args[i] = strdup(value);
-      }
+  if (args[0] == NULL) return;
+
+  char *alias_value = get_alias(args[0]);
+  if (alias_value) {
+    // Décomposer la valeur de l'alias en tokens et remplacer les args actuels
+    char *alias_copy = strdup(alias_value);
+    int i = 0;
+    char *token = strtok(alias_copy, " ");
+    while (token && i < MAX_ARGS - 1) {
+      args[i++] = strdup(token);
+      token = strtok(NULL, " ");
     }
+    args[i] = NULL;
+    free(alias_copy);
   }
 }
 

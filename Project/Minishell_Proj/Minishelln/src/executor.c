@@ -11,6 +11,7 @@
 
 
 void execute_command(char **args) {
+  expand_alias(args);
   int fd_out = -1;
   int fd_in = -1;
   int background = is_background_command(args);
@@ -213,7 +214,6 @@ void execute_commands_with_logic(const char *input) {
 
     // Vérifie si la commande est un built-in
     expand_env_variables(args);
-    expand_alias(args);
     int builtin_status = is_builtin(args);
     if (builtin_status == 0) {
       free(args);

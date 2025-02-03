@@ -88,10 +88,10 @@ int main(int argc, char *argv[]) {
     // Appel de l'alias si la commande est un alias
     char **args = parse_command(command);
     if (args[0]) {
-      char *alias_expansion = get_alias(args[0]);
-      if (alias_expansion) {
-        free(args[0]);
-        args[0] = strdup(alias_expansion);
+      if (args[0]) {
+        // expand_alias(args);
+        execute_command(args);
+        free(args);
       }
     }
 
