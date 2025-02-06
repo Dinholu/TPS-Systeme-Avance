@@ -88,11 +88,7 @@ int main(int argc, char *argv[]) {
     // Appel de l'alias si la commande est un alias
     char **args = parse_command(command);
     if (args[0]) {
-      if (args[0]) {
-        // expand_alias(args);
-        execute_command(args);
         free(args);
-      }
     }
 
     // Vérifie si la commande est une assignation de variable

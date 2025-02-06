@@ -15,23 +15,30 @@ int parse_control_operators(const char *input, CommandNode commands[]) {
     // Reset du buffer
     buf_index = 0;
 
-    while (*ptr == ' ')
+    while (*ptr == ' ') {
       ptr++;
+    }
 
-    // Lire la commande jusqu'à la prochaine opérateur de contrôle
-    while (*ptr &&
-           !(strncmp(ptr, "&&", 2) == 0 || strncmp(ptr, "||", 2) == 0)) {
-      buffer[buf_index++] = *ptr++;
+    // Lis la commande jusqu'à trouver un opérateur de contrôle
+    while (*ptr && strncmp(ptr, "&&", 2) != 0 && strncmp(ptr, "||", 2) != 0) {
+      if (buf_index < (int)(sizeof(buffer) - 1)) {
+        buffer[buf_index++] = *ptr;
+      }
+      ptr++;
     }
 
     buffer[buf_index] = '\0';
     if (buf_index > 0) {
       commands[count].command = strdup(buffer);
+      if (!commands[count].command) {
+        perror("strdup");
+        exit(EXIT_FAILURE);
+      }
       commands[count].type = CMD_NONE;
       count++;
     }
 
-    // Detecter l'opérateur de contrôle
+    // Détection de l'opérateur de contrôle
     if (strncmp(ptr, "&&", 2) == 0) {
       commands[count - 1].type = CMD_AND;
       ptr += 2;
@@ -54,6 +61,7 @@ char **parse_command(const char *command) {
   char *cmd_copy = strdup(command);
   if (!cmd_copy) {
     perror("strdup");
+    free(args);
     exit(EXIT_FAILURE);
   }
 
@@ -64,7 +72,17 @@ char **parse_command(const char *command) {
       token[strlen(token) - 1] = '\0';
       token++;
     }
-    args[i++] = strdup(token);
+    args[i] = strdup(token);
+    if (!args[i]) {
+      perror("strdup");
+      free(cmd_copy);
+      for (int j = 0; j < i; j++) {
+        free(args[j]);
+      }
+      free(args);
+      exit(EXIT_FAILURE);
+    }
+    i++;
     token = strtok(NULL, " ");
   }
   args[i] = NULL;
@@ -83,13 +101,24 @@ char **split_pipes(const char *command) {
   char *cmd_copy = strdup(command);
   if (!cmd_copy) {
     perror("strdup");
+    free(segments);
     exit(EXIT_FAILURE);
   }
 
   char *token = strtok(cmd_copy, "|");
   int i = 0;
   while (token && i < MAX_PIPE_SEGMENTS - 1) {
-    segments[i++] = strdup(token);
+    segments[i] = strdup(token);
+    if (!segments[i]) {
+      perror("strdup");
+      free(cmd_copy);
+      for (int j = 0; j < i; j++) {
+        free(segments[j]);
+      }
+      free(segments);
+      exit(EXIT_FAILURE);
+    }
+    i++;
     token = strtok(NULL, "|");
   }
   segments[i] = NULL;

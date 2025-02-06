@@ -9,223 +9,193 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+// Gestions des redirections
+int open_output_redirection(const char *filename, int append) {
+    int flags = O_WRONLY | O_CREAT | (append ? O_APPEND : O_TRUNC);
+    int fd = open(filename, flags, 0644);
+    if (fd == -1) {
+        perror("open");
+        exit(EXIT_FAILURE);
+    }
+    return fd;
+}
 
+int open_input_redirection(const char *filename) {
+    int fd = open(filename, O_RDONLY);
+    if (fd == -1) {
+        perror("open");
+        exit(EXIT_FAILURE);
+    }
+    return fd;
+}
+
+void handle_redirections(char **args, int *fd_in, int *fd_out) {
+    for (int i = 0; args[i]; i++) {
+        if (strcmp(args[i], ">") == 0 || strcmp(args[i], ">>") == 0) {
+            *fd_out = open_output_redirection(args[i + 1], strcmp(args[i], ">>") == 0);
+            args[i] = NULL;
+            break;
+        } else if (strcmp(args[i], "<") == 0) {
+            *fd_in = open_input_redirection(args[i + 1]);
+            args[i] = NULL;
+            break;
+        }
+    }
+}
+
+// Exécution d'une commande unique avec redirection et execution en arrière-plan
 void execute_command(char **args) {
-  expand_alias(args);
-  int fd_out = -1;
-  int fd_in = -1;
-  int background = is_background_command(args);
+    expand_alias(args);
 
-  for (int i = 0; args[i]; i++) {
-    if (strcmp(args[i], ">") == 0) {
-      fd_out = open(args[i + 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
-      if (fd_out == -1) {
-        perror("open");
-        exit(EXIT_FAILURE);
-      }
-      args[i] = NULL;
-      break;
-    } else if (strcmp(args[i], ">>") == 0) {
-      fd_out = open(args[i + 1], O_WRONLY | O_CREAT | O_APPEND, 0644);
-      if (fd_out == -1) {
-        perror("open");
-        exit(EXIT_FAILURE);
-      }
-      args[i] = NULL;
-      break;
-    }
-    if (strcmp(args[i], "<") == 0) {
-      fd_in = open(args[i + 1], O_RDONLY);
-      if (fd_in == -1) {
-        perror("open");
-        exit(EXIT_FAILURE);
-      }
-      args[i] = NULL;
-      break;
-    }
-  }
+    int fd_out = -1, fd_in = -1;
+    int background = is_background_command(args);
 
-  pid_t pid = fork();
-  if (pid < 0) {
-    perror("fork");
-    exit(EXIT_FAILURE);
-  }
+    handle_redirections(args, &fd_in, &fd_out);
 
-  if (pid == 0) {
-    // Processus fils : Exécution de la commande
-    if (fd_out != -1) {
-      dup2(fd_out, STDOUT_FILENO);
-      close(fd_out);
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        exit(EXIT_FAILURE);
     }
-    if (fd_in != -1) {
-      dup2(fd_in, STDIN_FILENO);
-      close(fd_in);
+
+    if (pid == 0) {  // Enfant
+        if (fd_out != -1) {
+            dup2(fd_out, STDOUT_FILENO);
+            close(fd_out);
+        }
+        if (fd_in != -1) {
+            dup2(fd_in, STDIN_FILENO);
+            close(fd_in);
+        }
+        if (execvp(args[0], args) == -1) {
+            perror("execvp");
+            exit(EXIT_FAILURE);
+        }
+    } else {  // Parent
+        if (!background) {
+            int status;
+            if (waitpid(pid, &status, 0) == -1) {
+                perror("waitpid");
+            }
+        } else {
+            printf("[Background process started] PID: %d\n", pid);
+        }
     }
-    if (execvp(args[0], args) == -1) {
-      perror("execvp");
-      exit(EXIT_FAILURE);
-    }
-  } else {
-    if (!background) {
-      // Processus parent : Attend que le fils termine
-      int status;
-      if (waitpid(pid, &status, 0) == -1) {
-        perror("waitpid");
-      }
-    } else {
-      printf("[Background process started] PID: %d\n", pid);
-    }
-  }
 }
 
+// Vérifie si une commande contient des opérateurs de redirection
 int contains_redirection(char **args) {
-  for (int i = 0; args[i]; i++) {
-    if (strcmp(args[i], ">") == 0) {
-      return 1;
+    for (int i = 0; args[i]; i++) {
+        if (strcmp(args[i], ">") == 0 || strcmp(args[i], ">>") == 0 || strcmp(args[i], "<") == 0) {
+            return 1;
+        }
     }
-    if (strcmp(args[i], ">>") == 0) {
-      return 1;
-    }
-    if (strcmp(args[i], "<") == 0) {
-      return 1;
-    }
-  }
-  return 0;
+    return 0;
 }
 
+// Exécution d'une commande logique (e.g., &&, ||)
 int execute_logic_command(const char *command) {
-  pid_t pid = fork();
-  int status;
-
-  if (pid == 0) {
-    // Processus fils
-    execlp("/bin/sh", "sh", "-c", command, (char *)NULL);
-    exit(EXIT_FAILURE);
-  } else if (pid < 0) {
-    perror("fork");
-    return -1;
-  } else {
-    // Processus parent
-    waitpid(pid, &status, 0);
-    return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
-  }
-}
-
-void execute_piped_commands(char **commands) {
-  int pipefd[2];
-  pid_t pid;
-  int fd_in = 0;
-
-  for (int i = 0; commands[i] != NULL; i++) {
-    if (pipe(pipefd) == -1) {
-      perror("pipe");
-      exit(EXIT_FAILURE);
-    }
-
-    if ((pid = fork()) == -1) {
-      perror("fork");
-      exit(EXIT_FAILURE);
-    }
+    pid_t pid = fork();
+    int status;
 
     if (pid == 0) {
-      // Processus fils
-      char **args = parse_command(commands[i]);
-      // Gérer la redirection de la sortie si présente
-      // Exemple commande : ls | grep "Makefile" > test.txt
-      int fd_out = -1;
-      for (int j = 0; args[j]; j++) {
-        if (strcmp(args[j], ">") == 0) {
-          fd_out = open(args[j + 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
-          if (fd_out == -1) {
-            perror("open");
-            exit(EXIT_FAILURE);
-          }
-          args[j] =
-              NULL; // Supprimer l'opérateur de redirection et les arguments
-          break;
-        }
-      }
-
-      // Rédirection des entrées et sorties
-      dup2(fd_in, STDIN_FILENO); // Input pour le premier processus
-      if (commands[i + 1] != NULL) {
-        dup2(pipefd[1], STDOUT_FILENO); // Output pour les commandes suivantes
-      } else if (fd_out != -1) {
-        dup2(fd_out, STDOUT_FILENO); // Output vers un fichier si présence de '>' dans la commande
-      }
-
-      close(pipefd[0]);
-      close(pipefd[1]);
-
-      // Execution de la commande
-      execvp(args[0], args);
-      perror("execvp");
-      exit(EXIT_FAILURE);
+        execlp("/bin/sh", "sh", "-c", command, (char *)NULL);
+        exit(EXIT_FAILURE);
+    } else if (pid < 0) {
+        perror("fork");
+        return -1;
     } else {
-      // Processus parent attend la fin du fils
-      waitpid(pid, NULL, 0);
-      close(pipefd[1]);
-      fd_in = pipefd[0];
+        waitpid(pid, &status, 0);
+        return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
     }
-  }
-  close(fd_in);
 }
 
+// Exécution de commandes séparées par des pipes
+void execute_piped_commands(char **commands) {
+    int pipefd[2];
+    pid_t pid;
+    int fd_in = 0;
+
+    for (int i = 0; commands[i] != NULL; i++) {
+        if (pipe(pipefd) == -1) {
+            perror("pipe");
+            exit(EXIT_FAILURE);
+        }
+
+        if ((pid = fork()) == -1) {
+            perror("fork");
+            exit(EXIT_FAILURE);
+        }
+
+        if (pid == 0) {
+            char **args = parse_command(commands[i]);
+            int fd_out = -1;
+            handle_redirections(args, &fd_in, &fd_out);
+
+            dup2(fd_in, STDIN_FILENO);
+            if (commands[i + 1] != NULL) {
+                dup2(pipefd[1], STDOUT_FILENO);
+            } else if (fd_out != -1) {
+                dup2(fd_out, STDOUT_FILENO);
+            }
+
+            close(pipefd[0]);
+            close(pipefd[1]);
+
+            execvp(args[0], args);
+            perror("execvp");
+            exit(EXIT_FAILURE);
+        } else {
+            waitpid(pid, NULL, 0);
+            close(pipefd[1]);
+            fd_in = pipefd[0];
+        }
+    }
+    close(fd_in);
+}
+
+// Check if a command requires background execution
 int check_background_execution(char *command) {
-  size_t len = strlen(command);
-  // Supprimer les espaces de fin et vérifier si la commande se termine par '&'
-  while (len > 0 && isspace(command[len - 1])) {
-    command[--len] = '\0';
-  }
-
-  if (len > 0 && command[len - 1] == '&') {
-    command[len - 1] = '\0';
-    return 1;
-  }
-  return 0;
+    size_t len = strlen(command);
+    while (len > 0 && isspace(command[len - 1])) {
+        command[--len] = '\0';
+    }
+    if (len > 0 && command[len - 1] == '&') {
+        command[len - 1] = '\0';
+        return 1;
+    }
+    return 0;
 }
 
+// Execute commands with logic operators (&&, ||)
 void execute_commands_with_logic(const char *input) {
-  CommandNode commands[MAX_COMMANDS];
-  int command_count = parse_control_operators(input, commands);
-  int success = 1; // Résultat de la commande précédente
+    CommandNode commands[MAX_COMMANDS];
+    int command_count = parse_control_operators(input, commands);
+    int success = 1;
 
-  for (int i = 0; i < command_count; i++) {
-    if (i > 0) {
-      // Sauter l'exécution en fonction du résultat de la commande précédente et de l'opérateur de contrôle
-      if ((commands[i - 1].type == CMD_AND && !success) ||
-          (commands[i - 1].type == CMD_OR && success)) {
-        continue;
-      }
+    for (int i = 0; i < command_count; i++) {
+        if (i > 0) {
+            if ((commands[i - 1].type == CMD_AND && !success) ||
+                (commands[i - 1].type == CMD_OR && success)) {
+                continue;
+            }
+        }
+
+        char **args = parse_command(commands[i].command);
+        if (contains_redirection(args)) {
+            execute_command(args);
+            success = 1;
+        } else if (args[0] != NULL) {
+            expand_env_variables(args);
+            int builtin_status = is_builtin(args);
+            if (builtin_status == 0) {
+                success = 1;
+            } else {
+                success = execute_logic_command(commands[i].command) == 0;
+            }
+        }
+
+        free(args);
+        free(commands[i].command);
     }
-
-    // Analyse et gère la redirection de la sortie pour la commande en cours
-    char **args = parse_command(commands[i].command);
-    if (contains_redirection(args)) {
-      execute_command(args);
-      success = 1;
-      free(args);
-      free(commands[i].command);
-      continue;
-    }
-    if (args[0] == NULL) {
-      continue;
-    }
-
-    // Vérifie si la commande est un built-in
-    expand_env_variables(args);
-    int builtin_status = is_builtin(args);
-    if (builtin_status == 0) {
-      free(args);
-      free(commands[i].command);
-      success = 1;
-      continue;
-    }
-
-    // Exécute la commande externe si ce n'est pas un built-in
-    success = execute_logic_command(commands[i].command) == 0;
-
-    free(args);
-    free(commands[i].command);
-  }
 }

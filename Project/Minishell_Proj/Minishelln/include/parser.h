@@ -3,36 +3,31 @@
 #define PARSER_H
 
 /**
- * @brief Parse une chaîne de caractères pour obtenir les commandes et les
- * opérateurs de contrôle.
- *
+ * @brief Parse une chaîne de caractères en une liste de commandes.
  * @param input Chaîne de caractères à parser.
- * @param commands Tableau de commandes et opérateurs de contrôle.
- * @return Nombre de commandes et opérateurs de contrôle.
+ * @param commands Tableau de commandes.
+ * @return Nombre de commandes.
  */
 int parse_control_operators(const char *input, CommandNode commands[]);
 
 /**
- * @brief Parse une commande pour obtenir les arguments.
- *
- * @param command Commande à parser.
- * @return Tableau d'arguments de la commande.
+ * @brief Parse une chaîne de caractères en une liste d'arguments.
+ * @param command Chaîne de caractères à parser.
+ * @return Tableau d'arguments.
  */
 char **parse_command(const char *command);
 
 /**
- * @brief Sépare une commande en segments séparés par des pipes.
- *
- * @param command Commande à séparer.
- * @return Tableau de chaînes représentant les segments.
+ * @brief Découpe une chaîne de caractères en fonction des pipes.
+ * @param command Chaîne de caractères à découper.
+ * @return Tableau de commandes.
  */
 char **split_pipes(const char *command);
 
 /**
- * @brief Vérifie si une commande contient des opérateurs de redirection.
- *
+ * @brief Vérifie si une commande est en arrière-plan.
  * @param args Tableau d'arguments de la commande.
- * @return 1 si la commande contient des opérateurs de redirection, 0 sinon.
+ * @return 1 si la commande est en arrière-plan, 0 sinon.
  */
 int is_background_command(char **args);
 
