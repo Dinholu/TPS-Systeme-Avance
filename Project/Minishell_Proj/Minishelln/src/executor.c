@@ -8,35 +8,51 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <errno.h>
 
 // Gestions des redirections
 int open_output_redirection(const char *filename, int append) {
+    if (!filename) {
+        errno = EFAULT;
+        return -1;
+    }
+
     int flags = O_WRONLY | O_CREAT | (append ? O_APPEND : O_TRUNC);
     int fd = open(filename, flags, 0644);
     if (fd == -1) {
-        perror("open");
-        exit(EXIT_FAILURE);
+        return -1;
     }
     return fd;
 }
 
 int open_input_redirection(const char *filename) {
+    if (!filename) {
+        errno = EFAULT;
+        return -1;
+    }
+    
     int fd = open(filename, O_RDONLY);
     if (fd == -1) {
-        perror("open");
-        exit(EXIT_FAILURE);
+        return -1;
     }
     return fd;
 }
 
 void handle_redirections(char **args, int *fd_in, int *fd_out) {
+    if (!args || !fd_in || !fd_out) {
+        errno = EFAULT;
+        return;
+    }
+    
     for (int i = 0; args[i]; i++) {
         if (strcmp(args[i], ">") == 0 || strcmp(args[i], ">>") == 0) {
             *fd_out = open_output_redirection(args[i + 1], strcmp(args[i], ">>") == 0);
+            if (*fd_out == -1) return;
             args[i] = NULL;
             break;
         } else if (strcmp(args[i], "<") == 0) {
             *fd_in = open_input_redirection(args[i + 1]);
+            if (*fd_in == -1) return;
             args[i] = NULL;
             break;
         }
@@ -45,6 +61,11 @@ void handle_redirections(char **args, int *fd_in, int *fd_out) {
 
 // Exécution d'une commande unique avec redirection et execution en arrière-plan
 void execute_command(char **args) {
+    if (!args) {
+        errno = EFAULT;
+        return;
+    }
+
     expand_alias(args);
 
     int fd_out = -1, fd_in = -1;
@@ -54,8 +75,7 @@ void execute_command(char **args) {
 
     pid_t pid = fork();
     if (pid < 0) {
-        perror("fork");
-        exit(EXIT_FAILURE);
+        return;
     }
 
     if (pid == 0) {  // Enfant
@@ -67,16 +87,12 @@ void execute_command(char **args) {
             dup2(fd_in, STDIN_FILENO);
             close(fd_in);
         }
-        if (execvp(args[0], args) == -1) {
-            perror("execvp");
-            exit(EXIT_FAILURE);
-        }
+        execvp(args[0], args);
+        exit(EXIT_FAILURE);
     } else {  // Parent
         if (!background) {
             int status;
-            if (waitpid(pid, &status, 0) == -1) {
-                perror("waitpid");
-            }
+            waitpid(pid, &status, 0);
         } else {
             printf("[Background process started] PID: %d\n", pid);
         }
@@ -85,6 +101,11 @@ void execute_command(char **args) {
 
 // Vérifie si une commande contient des opérateurs de redirection
 int contains_redirection(char **args) {
+    if (!args) {
+        errno = EFAULT;
+        return -1;
+    }
+
     for (int i = 0; args[i]; i++) {
         if (strcmp(args[i], ">") == 0 || strcmp(args[i], ">>") == 0 || strcmp(args[i], "<") == 0) {
             return 1;
@@ -95,40 +116,52 @@ int contains_redirection(char **args) {
 
 // Exécution d'une commande logique (e.g., &&, ||)
 int execute_logic_command(const char *command) {
-    pid_t pid = fork();
-    int status;
+    if (!command) {
+        errno = EFAULT;
+        return -1;
+    }
 
+    pid_t pid = fork();
+    if (pid < 0) {
+        return -1;
+    }
     if (pid == 0) {
         execlp("/bin/sh", "sh", "-c", command, (char *)NULL);
         exit(EXIT_FAILURE);
-    } else if (pid < 0) {
-        perror("fork");
-        return -1;
-    } else {
-        waitpid(pid, &status, 0);
-        return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
     }
+    
+    int status;
+    waitpid(pid, &status, 0);
+    return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }
 
 // Exécution de commandes séparées par des pipes
 void execute_piped_commands(char **commands) {
+    if (!commands) {
+        errno = EFAULT;
+        return;
+    }
+
     int pipefd[2];
     pid_t pid;
     int fd_in = 0;
 
     for (int i = 0; commands[i] != NULL; i++) {
         if (pipe(pipefd) == -1) {
-            perror("pipe");
-            exit(EXIT_FAILURE);
+            return;
         }
 
-        if ((pid = fork()) == -1) {
-            perror("fork");
-            exit(EXIT_FAILURE);
+        pid = fork();
+        if (pid == -1) {
+            return;
         }
 
         if (pid == 0) {
             char **args = parse_command(commands[i]);
+            if (!args) {
+                errno = ENOMEM;
+                exit(EXIT_FAILURE);
+            }
             int fd_out = -1;
             handle_redirections(args, &fd_in, &fd_out);
 
@@ -143,7 +176,6 @@ void execute_piped_commands(char **commands) {
             close(pipefd[1]);
 
             execvp(args[0], args);
-            perror("execvp");
             exit(EXIT_FAILURE);
         } else {
             waitpid(pid, NULL, 0);
@@ -154,8 +186,13 @@ void execute_piped_commands(char **commands) {
     close(fd_in);
 }
 
-// Check if a command requires background execution
+// Vérifie si une commande nécessite une exécution en arrière plan
 int check_background_execution(char *command) {
+    if (!command) {
+        errno = EFAULT;
+        return -1;
+    }
+
     size_t len = strlen(command);
     while (len > 0 && isspace(command[len - 1])) {
         command[--len] = '\0';
@@ -167,8 +204,13 @@ int check_background_execution(char *command) {
     return 0;
 }
 
-// Execute commands with logic operators (&&, ||)
+// Exécution des commandes avec les opérateurs logiques (&&, ||)
 void execute_commands_with_logic(const char *input) {
+    if (!input) {
+        errno = EFAULT;
+        return;
+    }
+
     CommandNode commands[MAX_COMMANDS];
     int command_count = parse_control_operators(input, commands);
     int success = 1;
@@ -182,6 +224,11 @@ void execute_commands_with_logic(const char *input) {
         }
 
         char **args = parse_command(commands[i].command);
+        if (!args) {
+            errno = ENOMEM;
+            return;
+        }
+
         if (contains_redirection(args)) {
             execute_command(args);
             success = 1;

@@ -4,8 +4,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 int parse_control_operators(const char *input, CommandNode commands[]) {
+  if (!input || !commands) {
+    errno = EFAULT;
+    return -1;
+  }
+  
   int count = 0;
   const char *ptr = input;
   char buffer[1024];
@@ -31,8 +37,8 @@ int parse_control_operators(const char *input, CommandNode commands[]) {
     if (buf_index > 0) {
       commands[count].command = strdup(buffer);
       if (!commands[count].command) {
-        perror("strdup");
-        exit(EXIT_FAILURE);
+        errno = ENOMEM;
+        return -1;
       }
       commands[count].type = CMD_NONE;
       count++;
@@ -52,17 +58,22 @@ int parse_control_operators(const char *input, CommandNode commands[]) {
 }
 
 char **parse_command(const char *command) {
+  if (!command) {
+    errno = EFAULT;
+    return NULL;
+  }
+
   char **args = malloc(MAX_ARGS * sizeof(char *));
   if (!args) {
-    perror("malloc");
-    exit(EXIT_FAILURE);
+    errno = ENOMEM;
+    return NULL;
   }
 
   char *cmd_copy = strdup(command);
   if (!cmd_copy) {
-    perror("strdup");
     free(args);
-    exit(EXIT_FAILURE);
+    errno = ENOMEM;
+    return NULL;
   }
 
   char *token = strtok(cmd_copy, " ");
@@ -74,13 +85,13 @@ char **parse_command(const char *command) {
     }
     args[i] = strdup(token);
     if (!args[i]) {
-      perror("strdup");
       free(cmd_copy);
       for (int j = 0; j < i; j++) {
         free(args[j]);
       }
       free(args);
-      exit(EXIT_FAILURE);
+      errno = ENOMEM;
+      return NULL;
     }
     i++;
     token = strtok(NULL, " ");
@@ -92,17 +103,22 @@ char **parse_command(const char *command) {
 }
 
 char **split_pipes(const char *command) {
+  if (!command) {
+    errno = EFAULT;
+    return NULL;
+  }
+
   char **segments = malloc(MAX_PIPE_SEGMENTS * sizeof(char *));
   if (!segments) {
-    perror("malloc");
-    exit(EXIT_FAILURE);
+    errno = ENOMEM;
+    return NULL;
   }
 
   char *cmd_copy = strdup(command);
   if (!cmd_copy) {
-    perror("strdup");
     free(segments);
-    exit(EXIT_FAILURE);
+    errno = ENOMEM;
+    return NULL;
   }
 
   char *token = strtok(cmd_copy, "|");
@@ -110,13 +126,13 @@ char **split_pipes(const char *command) {
   while (token && i < MAX_PIPE_SEGMENTS - 1) {
     segments[i] = strdup(token);
     if (!segments[i]) {
-      perror("strdup");
       free(cmd_copy);
       for (int j = 0; j < i; j++) {
         free(segments[j]);
       }
       free(segments);
-      exit(EXIT_FAILURE);
+      errno = ENOMEM;
+      return NULL;
     }
     i++;
     token = strtok(NULL, "|");
@@ -128,6 +144,11 @@ char **split_pipes(const char *command) {
 }
 
 int is_background_command(char **args) {
+  if (!args) {
+    errno = EFAULT;
+    return -1;
+  }
+
   for (int i = 0; args[i]; i++) {
     if (strcmp(args[i], "&") == 0) {
       free(args[i]);
