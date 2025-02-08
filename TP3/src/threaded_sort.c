@@ -104,7 +104,7 @@ int main()
   printf("\nTaille du tableau : %ld\n", SIZE);
 
   int thread_counts[] = {1, 2, 4, 8};
-  for (int i = 0; i < sizeof(thread_counts) / sizeof(thread_counts[0]); i++)
+  for (size_t i = 0; i < sizeof(thread_counts) / sizeof(thread_counts[0]); i++)
   {
     int num_threads = thread_counts[i];
     minVal = INT_MAX;
