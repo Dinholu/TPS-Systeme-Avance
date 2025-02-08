@@ -9,6 +9,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #define PROMPT "shell> "
 
@@ -16,7 +18,6 @@ extern EnvVar env_vars[MAX_ENV_VARS];
 extern Alias aliases[MAX_ALIASES];
 extern int env_count;
 extern int alias_count;
-
 /**
  * @brief Fonction principale du shell.
  * Boucle principale qui lit les commandes de l'utilisateur,
@@ -38,7 +39,6 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Usage: %s [-c command]\n", argv[0]);
         return -1;
     }
-
     // Mode interactif
     char command[1024];
     while (1)
@@ -153,11 +153,33 @@ int main(int argc, char *argv[])
                 continue;
             }
 
-            if (execvp(args[0], args) == -1)
+            pid_t pid = fork();
+            if (pid == 0)
             {
-                perror("execvp");
+                if (execvp(args[0], args) == -1)
+                {
+                    perror("execvp");
+                }
+                exit(EXIT_FAILURE);
             }
-            success = 0;
+            else if (pid > 0)
+            {
+                if (!is_background)
+                {
+                    int status;
+                    waitpid(pid, &status, 0);
+                    success = (WIFEXITED(status) && WEXITSTATUS(status) == 0);
+                }
+                else
+                {
+                    printf("[Background process started] PID: %d\n", pid);
+                }
+            }
+            else
+            {
+                perror("fork");
+                success = 0;
+            }
             free(args);
             free(commands[i].command);
         }
