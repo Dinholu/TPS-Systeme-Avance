@@ -7,7 +7,7 @@
 
 #define SIZE (long int)1e8
 
-// Variables globales pour stocker le minimum et le maximum
+// Variables globales protégées par mutex
 int global_min, global_max;
 pthread_mutex_t mutex;
 
@@ -37,7 +37,6 @@ void *find_min_max(void *arg)
     int local_min = INT_MAX;
     int local_max = INT_MIN;
 
-    // Parcours du segment du tableau pour trouver le min et le max locaux
     for (int i = data->start; i < data->end; i++)
     {
         if (data->tab[i] < local_min)
@@ -46,7 +45,6 @@ void *find_min_max(void *arg)
             local_max = data->tab[i];
     }
 
-    // Protection des accès aux variables globales avec un mutex
     pthread_mutex_lock(&mutex);
     if (local_min < global_min)
         global_min = local_min;
@@ -69,48 +67,40 @@ void createThreads(int num_threads, int *tab)
     {
         thread_data[i].tab = tab;
         thread_data[i].start = i * segment_size;
-        thread_data[i].end = (i + 1) * segment_size;
-        // Le dernier thread prend les éléments restants, s'il y en a
-        if (i == num_threads - 1)
+        thread_data[i].end = (i + 1) * segment_size + (i == num_threads - 1 ? remaining : 0);
+
+        if (pthread_create(&threads[i], NULL, find_min_max, &thread_data[i]) != 0)
         {
-            thread_data[i].end += remaining;
+            perror("Erreur lors de la création du thread");
+            exit(EXIT_FAILURE);
         }
-        pthread_create(&threads[i], NULL, find_min_max, &thread_data[i]);
     }
 
-    // Attente de la fin de tous les threads
     for (int i = 0; i < num_threads; i++)
     {
         pthread_join(threads[i], NULL);
     }
 }
 
-int main(int argc, char **argv)
+int main()
 {
-    // Allocation dynamique de mémoire pour le tableau
-    int *tab = (int *)malloc(SIZE * sizeof(int));
-    if (!tab)
+    int *tab;
+    if (posix_memalign((void **)&tab, 64, SIZE * sizeof(int)) != 0)
     {
-        perror("Allocation échouée");
+        perror("Échec de l'allocation mémoire");
         return EXIT_FAILURE;
     }
 
-    // Initialisation du tableau et des variables globales
     initializeTab(tab);
     global_min = INT_MAX;
     global_max = INT_MIN;
-
-    // Initialisation du mutex
     pthread_mutex_init(&mutex, NULL);
 
     struct timeval start_time, end_time;
+    printf("\nTaille du tableau : %ld\n", SIZE);
 
-    // Affichage des informations initiales
-    printf("\nTaille du tableau : %ld \n", SIZE);
-
-    // Test avec différents nombres de threads
     int thread_counts[] = {1, 2, 4, 8};
-    for (int i = 0; i < sizeof(thread_counts) / sizeof(thread_counts[0]); i++)
+    for (size_t i = 0; i < sizeof(thread_counts) / sizeof(thread_counts[0]); i++)
     {
         int num_threads = thread_counts[i];
         global_min = INT_MAX;
@@ -129,9 +119,7 @@ int main(int argc, char **argv)
                global_min, global_max, elapsed_time);
     }
 
-    // Libération des ressources
     pthread_mutex_destroy(&mutex);
     free(tab);
-
     return EXIT_SUCCESS;
 }
