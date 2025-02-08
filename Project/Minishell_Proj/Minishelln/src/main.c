@@ -82,6 +82,7 @@ int main(int argc, char *argv[])
             continue;
         }
 
+
         if (strncmp(command, "unalias ", 8) == 0)
         {
             unset_alias(command + 8);
