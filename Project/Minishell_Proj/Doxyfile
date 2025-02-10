@@ -1,0 +1,53 @@
+# Project configuration
+PROJECT_NAME           = "shell"
+PROJECT_NUMBER         = "1.0"
+OUTPUT_DIRECTORY       = "./docs"
+CREATE_SUBDIRS         = NO
+OPTIMIZE_OUTPUT_FOR_C  = YES
+
+# Build configuration
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+EXTRACT_LOCAL_METHODS  = YES
+SHOW_USED_FILES        = NO
+EXTRACT_GLOBALS        = YES
+HIDE_UNDOC_MEMBERS     = YES
+GENERATE_GROUPS        = NO
+
+# Input configuration
+INPUT                  = ./Minishelln/src ./Minishelln/include
+FILE_PATTERNS          = *.c *.h
+RECURSIVE              = YES
+EXCLUDE_SYMLINKS      = NO
+
+# Source browser
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = YES
+STRIP_CODE_COMMENTS    = NO
+
+# Documentation options
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+HTML_DYNAMIC_SECTIONS  = YES
+GENERATE_LATEX         = NO
+GENERATE_MAN           = YES
+GENERATE_XML           = NO
+GENERATE_RTF           = NO
+
+# Diagrams
+HAVE_DOT               = NO
+DOT_PATH               =
+DOT_NUM_THREADS        = 2
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+CLASS_DIAGRAMS         = YES
+COLLABORATION_GRAPH    = YES
+GROUP_GRAPHS           = YES
+DOT_TRANSPARENT        = YES
+
+# Additional options
+ALPHABETICAL_INDEX     = NO
+SEARCHENGINE           = NO
+GENERATE_TREEVIEW      = YES

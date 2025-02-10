@@ -1,0 +1,274 @@
+.TH "Minishelln/src/main.c" 3 "Version 1.0" "shell" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Minishelln/src/main.c
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'include/builtins\&.h'\fP
+.br
+\fC#include 'include/executor\&.h'\fP
+.br
+\fC#include 'include/history\&.h'\fP
+.br
+\fC#include 'include/parser\&.h'\fP
+.br
+\fC#include 'include/typedef\&.h'\fP
+.br
+\fC#include <fcntl\&.h>\fP
+.br
+\fC#include <stdio\&.h>\fP
+.br
+\fC#include <stdlib\&.h>\fP
+.br
+\fC#include <string\&.h>\fP
+.br
+\fC#include <unistd\&.h>\fP
+.br
+\fC#include <errno\&.h>\fP
+.br
+\fC#include <sys/types\&.h>\fP
+.br
+\fC#include <sys/wait\&.h>\fP
+.br
+
+.SS "Macros"
+
+.in +1c
+.ti -1c
+.RI "#define \fBPROMPT\fP   'shell> '"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBmain\fP (int argc, char *argv[])"
+.br
+.RI "Fonction principale du shell\&. Boucle principale qui lit les commandes de l'utilisateur, les analyse, et les exécute\&. "
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "\fBEnvVar\fP \fBenv_vars\fP [\fBMAX_ENV_VARS\fP]"
+.br
+.ti -1c
+.RI "\fBAlias\fP \fBaliases\fP [\fBMAX_ALIASES\fP]"
+.br
+.ti -1c
+.RI "int \fBenv_count\fP"
+.br
+.ti -1c
+.RI "int \fBalias_count\fP"
+.br
+.in -1c
+.SH "Macro Definition Documentation"
+.PP 
+.SS "#define PROMPT   'shell> '"
+
+.PP
+Definition at line \fB15\fP of file \fBmain\&.c\fP\&.
+.SH "Function Documentation"
+.PP 
+.SS "int main (int argc, char * argv[])"
+
+.PP
+Fonction principale du shell\&. Boucle principale qui lit les commandes de l'utilisateur, les analyse, et les exécute\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fIargc\fP Nombre d'arguments passés au programme\&. 
+.br
+\fIargv\fP Tableau d'arguments passés au programme\&. 
+.RE
+.PP
+
+.PP
+Definition at line \fB28\fP of file \fBmain\&.c\fP\&..PP
+.nf
+29 {
+30     // Mode batch
+31     if (argc == 3 && strcmp(argv[1], "\-c") == 0)
+32     {
+33         execute_commands_with_logic(argv[2]);
+34         return 0;
+35     }
+36 
+37     if (argc > 3 || (argc == 3 && strcmp(argv[1], "\-c") != 0))
+38     {
+39         fprintf(stderr, "Usage: %s [\-c command]\\n", argv[0]);
+40         return \-1;
+41     }
+42     // Mode interactif
+43     char command[1024];
+44     while (1)
+45     {
+46         printf(PROMPT);
+47         if (!fgets(command, sizeof(command), stdin))
+48         {
+49             printf("\\nExiting shell\&.\&.\&.\\n");
+50             break; // EOF
+51         }
+52 
+53         // Supprime le '\\n' en fin de commande
+54         command[strcspn(command, "\\n")] = 0;
+55 
+56         // Vérifie si la commande est vide
+57         if (strlen(command) == 0)
+58             continue;
+59         add_to_history(command);
+60 
+61         if (strncmp(command, "alias ", 6) == 0)
+62         {
+63             char *alias_def = command + 6;
+64             char *equals_sign = strchr(alias_def, '=');
+65             if (equals_sign)
+66             {
+67                 *equals_sign = '\\0';
+68                 char *alias_name = alias_def;
+69                 char *alias_value = equals_sign + 1;
+70 
+71                 if (alias_value[0] == '"' && alias_value[strlen(alias_value) \- 1] == '"')
+72                 {
+73                     alias_value[strlen(alias_value) \- 1] = '\\0';
+74                     alias_value++;
+75                 }
+76                 set_alias(alias_name, alias_value);
+77             }
+78             else
+79             {
+80                 fprintf(stderr, "alias: invalid syntax\\n");
+81             }
+82             continue;
+83         }
+84 
+85 
+86         if (strncmp(command, "unalias ", 8) == 0)
+87         {
+88             unset_alias(command + 8);
+89             continue;
+90         }
+91 
+92         if (strchr(command, '=') && !strchr(command, ' '))
+93         {
+94             char *name = strtok(command, "=");
+95             char *value = strtok(NULL, "");
+96             if (name && value)
+97             {
+98                 set_env_var(name, value);
+99             }
+100             continue;
+101         }
+102 
+103         // Vérifie si la commande est une suppression de variable
+104         if (strncmp(command, "unset ", 6) == 0)
+105         {
+106             unset_env_var(command + 6);
+107             continue;
+108         }
+109 
+110         int is_background = check_background_execution(command);
+111         CommandNode commands[MAX_COMMANDS];
+112         int command_count = parse_control_operators(command, commands);
+113         int success = 1;
+114 
+115         for (int i = 0; i < command_count; i++)
+116         {
+117             if (i > 0)
+118             {
+119                 if ((commands[i \- 1]\&.type == CMD_AND && !success) ||
+120                     (commands[i \- 1]\&.type == CMD_OR && success))
+121                 {
+122                     continue;
+123                 }
+124             }
+125 
+126             char **args = parse_command(commands[i]\&.command);
+127             if (!args || args[0] == NULL)
+128             {
+129                 free(args);
+130                 continue;
+131             }
+132 
+133             char *alias_expansion = get_alias(args[0]);
+134             if (alias_expansion)
+135             {
+136                 free(args[0]);
+137                 args[0] = strdup(alias_expansion);
+138 
+139                 char **expanded_args = parse_command(alias_expansion);
+140                 if (expanded_args)
+141                 {
+142                     free(args);
+143                     args = expanded_args;
+144                 }
+145             }
+146 
+147             expand_env_variables(args);
+148 
+149             if (is_builtin(args) == 0)
+150             {
+151                 free(args);
+152                 free(commands[i]\&.command);
+153                 success = 1;
+154                 continue;
+155             }
+156 
+157             pid_t pid = fork();
+158             if (pid == 0)
+159             {
+160                 if (execvp(args[0], args) == \-1)
+161                 {
+162                     perror("execvp");
+163                 }
+164                 exit(EXIT_FAILURE);
+165             }
+166             else if (pid > 0)
+167             {
+168                 if (!is_background)
+169                 {
+170                     int status;
+171                     waitpid(pid, &status, 0);
+172                     success = (WIFEXITED(status) && WEXITSTATUS(status) == 0);
+173                 }
+174                 else
+175                 {
+176                     printf("[Background process started] PID: %d\\n", pid);
+177                 }
+178             }
+179             else
+180             {
+181                 perror("fork");
+182                 success = 0;
+183             }
+184             free(args);
+185             free(commands[i]\&.command);
+186         }
+187     }
+188     return 0;
+189 }
+.fi
+
+.SH "Variable Documentation"
+.PP 
+.SS "int alias_count\fC [extern]\fP"
+
+.PP
+Definition at line \fB176\fP of file \fBbuiltins\&.c\fP\&.
+.SS "\fBAlias\fP aliases[\fBMAX_ALIASES\fP]\fC [extern]\fP"
+
+.PP
+Definition at line \fB175\fP of file \fBbuiltins\&.c\fP\&.
+.SS "int env_count\fC [extern]\fP"
+
+.PP
+Definition at line \fB73\fP of file \fBbuiltins\&.c\fP\&.
+.SS "\fBEnvVar\fP env_vars[\fBMAX_ENV_VARS\fP]\fC [extern]\fP"
+
+.PP
+Definition at line \fB72\fP of file \fBbuiltins\&.c\fP\&.
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for shell from the source code\&.
