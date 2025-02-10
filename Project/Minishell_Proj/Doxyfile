@@ -1,5 +1,5 @@
 # Project configuration
-PROJECT_NAME           = "shell"
+PROJECT_NAME           = "Alizée et Vladimir minishell"
 PROJECT_NUMBER         = "1.0"
 OUTPUT_DIRECTORY       = "./docs"
 CREATE_SUBDIRS         = NO

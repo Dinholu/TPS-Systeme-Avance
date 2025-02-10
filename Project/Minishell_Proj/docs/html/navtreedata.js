@@ -24,7 +24,7 @@
 */
 var NAVTREE =
 [
-  [ "shell", "index.html", [
+  [ "Alizée et Vladimir minishell", "index.html", [
     [ "Data Structures", "annotated.html", [
       [ "Data Structures", "annotated.html", "annotated_dup" ],
       [ "Data Fields", "functions.html", [

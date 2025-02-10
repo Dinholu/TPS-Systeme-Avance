@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>shell: Minishelln/src/history.c File Reference</title>
+<title>Alizée et Vladimir minishell: Minishelln/src/history.c File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -22,7 +22,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">shell<span id="projectnumber">&#160;1.0</span>
+   <div id="projectname">Alizée et Vladimir minishell<span id="projectnumber">&#160;1.0</span>
    </div>
   </td>
  </tr>
@@ -88,9 +88,6 @@ Functions</h2></td></tr>
 <tr class="memitem:a18184178b6a2092ba9e4d64a43e4efc8" id="r_a18184178b6a2092ba9e4d64a43e4efc8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="history_8c.html#a18184178b6a2092ba9e4d64a43e4efc8">display_history</a> ()</td></tr>
 <tr class="memdesc:a18184178b6a2092ba9e4d64a43e4efc8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Affiche l'historique des commandes.  <br /></td></tr>
 <tr class="separator:a18184178b6a2092ba9e4d64a43e4efc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3b03116158d970b7e3ad5449db963e6f" id="r_a3b03116158d970b7e3ad5449db963e6f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="history_8c.html#a3b03116158d970b7e3ad5449db963e6f">show_prompt</a> ()</td></tr>
-<tr class="memdesc:a3b03116158d970b7e3ad5449db963e6f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Affiche une invite de commande personnalisée.  <br /></td></tr>
-<tr class="separator:a3b03116158d970b7e3ad5449db963e6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="ae41c75682d94c3f1a2c7e1e28ed0391a" name="ae41c75682d94c3f1a2c7e1e28ed0391a"></a>
@@ -137,45 +134,31 @@ Functions</h2></td></tr>
 <p class="definition">Definition at line <a class="el" href="history_8c_source.html#l00011">11</a> of file <a class="el" href="history_8c_source.html">history.c</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   11</span>                                         {</div>
 <div class="line"><span class="lineno">   12</span>  <span class="keywordflow">if</span> (!command) {</div>
-<div class="line"><span class="lineno">   13</span>    errno = EFAULT;</div>
-<div class="line"><span class="lineno">   14</span>    <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">   13</span>      errno = EFAULT;</div>
+<div class="line"><span class="lineno">   14</span>      <span class="keywordflow">return</span>;</div>
 <div class="line"><span class="lineno">   15</span>  }</div>
-<div class="line"><span class="lineno">   16</span> </div>
+<div class="line"><span class="lineno">   16</span>  </div>
 <div class="line"><span class="lineno">   17</span>  <span class="keywordtype">int</span> fd = open(<a class="code hl_define" href="history_8c.html#ae41c75682d94c3f1a2c7e1e28ed0391a">HISTORY_FILE</a>, O_WRONLY | O_CREAT | O_APPEND, 0644);</div>
 <div class="line"><span class="lineno">   18</span>  <span class="keywordflow">if</span> (fd == -1) {</div>
 <div class="line"><span class="lineno">   19</span>    <span class="keywordflow">switch</span> (errno) {</div>
-<div class="line"><span class="lineno">   20</span>    <span class="keywordflow">case</span> EACCES:</div>
-<div class="line"><span class="lineno">   21</span>      perror(<span class="stringliteral">&quot;add_to_history: Permission denied&quot;</span>);</div>
-<div class="line"><span class="lineno">   22</span>      <span class="keywordflow">break</span>;</div>
-<div class="line"><span class="lineno">   23</span>    <span class="keywordflow">case</span> EISDIR:</div>
-<div class="line"><span class="lineno">   24</span>      perror(<span class="stringliteral">&quot;add_to_history: Is a directory&quot;</span>);</div>
-<div class="line"><span class="lineno">   25</span>      <span class="keywordflow">break</span>;</div>
-<div class="line"><span class="lineno">   26</span>    <span class="keywordflow">case</span> ENOENT:</div>
-<div class="line"><span class="lineno">   27</span>      perror(<span class="stringliteral">&quot;add_to_history: No such file or directory&quot;</span>);</div>
-<div class="line"><span class="lineno">   28</span>      <span class="keywordflow">break</span>;</div>
-<div class="line"><span class="lineno">   29</span>    <span class="keywordflow">case</span> EFAULT:</div>
-<div class="line"><span class="lineno">   30</span>      perror(<span class="stringliteral">&quot;add_to_history: Bad address&quot;</span>);</div>
-<div class="line"><span class="lineno">   31</span>      <span class="keywordflow">break</span>;</div>
-<div class="line"><span class="lineno">   32</span>    <span class="keywordflow">default</span>:</div>
-<div class="line"><span class="lineno">   33</span>      perror(<span class="stringliteral">&quot;add_to_history: Failed to open history file&quot;</span>);</div>
-<div class="line"><span class="lineno">   34</span>      <span class="keywordflow">break</span>;</div>
-<div class="line"><span class="lineno">   35</span>    }</div>
-<div class="line"><span class="lineno">   36</span>    <span class="keywordflow">return</span>;</div>
-<div class="line"><span class="lineno">   37</span>  }</div>
-<div class="line"><span class="lineno">   38</span> </div>
-<div class="line"><span class="lineno">   39</span>  <span class="keywordflow">if</span> (write(fd, command, strlen(command)) == -1 || write(fd, <span class="stringliteral">&quot;\n&quot;</span>, 1) == -1) {</div>
-<div class="line"><span class="lineno">   40</span>    <span class="keywordflow">switch</span> (errno) {</div>
-<div class="line"><span class="lineno">   41</span>    <span class="keywordflow">case</span> EFAULT:</div>
-<div class="line"><span class="lineno">   42</span>      perror(<span class="stringliteral">&quot;add_to_history: Bad address&quot;</span>);</div>
-<div class="line"><span class="lineno">   43</span>      <span class="keywordflow">break</span>;</div>
-<div class="line"><span class="lineno">   44</span>    <span class="keywordflow">default</span>:</div>
-<div class="line"><span class="lineno">   45</span>      perror(<span class="stringliteral">&quot;add_to_history: Fail to write to history file&quot;</span>);</div>
-<div class="line"><span class="lineno">   46</span>      <span class="keywordflow">break</span>;</div>
-<div class="line"><span class="lineno">   47</span>    }</div>
-<div class="line"><span class="lineno">   48</span>  }</div>
-<div class="line"><span class="lineno">   49</span> </div>
-<div class="line"><span class="lineno">   50</span>  close(fd);</div>
-<div class="line"><span class="lineno">   51</span>}</div>
+<div class="line"><span class="lineno">   20</span>        <span class="keywordflow">case</span> EACCES: perror(<span class="stringliteral">&quot;add_to_history: Permission denied&quot;</span>); <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">   21</span>        <span class="keywordflow">case</span> EISDIR: perror(<span class="stringliteral">&quot;add_to_history: Is a directory&quot;</span>); <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">   22</span>        <span class="keywordflow">case</span> ENOENT: perror(<span class="stringliteral">&quot;add_to_history: No such file or directory&quot;</span>); <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">   23</span>        <span class="keywordflow">case</span> EFAULT: perror(<span class="stringliteral">&quot;add_to_history: Bad address&quot;</span>); <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">   24</span>        <span class="keywordflow">default</span>: perror(<span class="stringliteral">&quot;add_to_history: Failed to open history file&quot;</span>); <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">   25</span>    }</div>
+<div class="line"><span class="lineno">   26</span>    <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">   27</span>  }</div>
+<div class="line"><span class="lineno">   28</span> </div>
+<div class="line"><span class="lineno">   29</span>  <span class="keywordflow">if</span> (write(fd, command, strlen(command)) == -1 || write(fd, <span class="stringliteral">&quot;\n&quot;</span>, 1) == -1) {</div>
+<div class="line"><span class="lineno">   30</span>        <span class="keywordflow">switch</span> (errno) {</div>
+<div class="line"><span class="lineno">   31</span>            <span class="keywordflow">case</span> EFAULT: perror(<span class="stringliteral">&quot;add_to_history: Bad address&quot;</span>); <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">   32</span>            <span class="keywordflow">default</span>: perror(<span class="stringliteral">&quot;add_to_history: Fail to write to history file&quot;</span>); <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">   33</span>        }</div>
+<div class="line"><span class="lineno">   34</span>  }</div>
+<div class="line"><span class="lineno">   35</span> </div>
+<div class="line"><span class="lineno">   36</span>  close(fd);</div>
+<div class="line"><span class="lineno">   37</span>}</div>
 <div class="ttc" id="ahistory_8c_html_ae41c75682d94c3f1a2c7e1e28ed0391a"><div class="ttname"><a href="history_8c.html#ae41c75682d94c3f1a2c7e1e28ed0391a">HISTORY_FILE</a></div><div class="ttdeci">#define HISTORY_FILE</div><div class="ttdef"><b>Definition</b> <a href="history_8c_source.html#l00009">history.c:9</a></div></div>
 </div><!-- fragment -->
 </div>
@@ -197,61 +180,27 @@ Functions</h2></td></tr>
 
 <p>Affiche l'historique des commandes. </p>
 
-<p class="definition">Definition at line <a class="el" href="history_8c_source.html#l00053">53</a> of file <a class="el" href="history_8c_source.html">history.c</a>.</p>
-<div class="fragment"><div class="line"><span class="lineno">   53</span>                       {</div>
-<div class="line"><span class="lineno">   54</span>  FILE *file = fopen(<a class="code hl_define" href="history_8c.html#ae41c75682d94c3f1a2c7e1e28ed0391a">HISTORY_FILE</a>, <span class="stringliteral">&quot;r&quot;</span>);</div>
-<div class="line"><span class="lineno">   55</span>  <span class="keywordflow">if</span> (!file) {</div>
-<div class="line"><span class="lineno">   56</span>    <span class="keywordflow">switch</span> (errno) {</div>
-<div class="line"><span class="lineno">   57</span>    <span class="keywordflow">case</span> EACCES:</div>
-<div class="line"><span class="lineno">   58</span>      perror(<span class="stringliteral">&quot;display_history: Permission denied&quot;</span>);</div>
-<div class="line"><span class="lineno">   59</span>      <span class="keywordflow">break</span>;</div>
-<div class="line"><span class="lineno">   60</span>    <span class="keywordflow">case</span> ENOENT:</div>
-<div class="line"><span class="lineno">   61</span>      perror(<span class="stringliteral">&quot;display_history: No such file or directory&quot;</span>);</div>
-<div class="line"><span class="lineno">   62</span>      <span class="keywordflow">break</span>;</div>
-<div class="line"><span class="lineno">   63</span>    <span class="keywordflow">default</span>:</div>
-<div class="line"><span class="lineno">   64</span>      perror(<span class="stringliteral">&quot;display_history: Failed to open history file&quot;</span>);</div>
-<div class="line"><span class="lineno">   65</span>      <span class="keywordflow">break</span>;</div>
-<div class="line"><span class="lineno">   66</span>    }</div>
-<div class="line"><span class="lineno">   67</span>    <span class="keywordflow">return</span>;</div>
-<div class="line"><span class="lineno">   68</span>  }</div>
-<div class="line"><span class="lineno">   69</span> </div>
-<div class="line"><span class="lineno">   70</span>  <span class="keywordtype">char</span> line[1024];</div>
-<div class="line"><span class="lineno">   71</span>  <span class="keywordtype">int</span> line_number = 1;</div>
-<div class="line"><span class="lineno">   72</span>  <span class="keywordflow">while</span> (fgets(line, <span class="keyword">sizeof</span>(line), file)) {</div>
-<div class="line"><span class="lineno">   73</span>    printf(<span class="stringliteral">&quot;%d: %s&quot;</span>, line_number++, line);</div>
-<div class="line"><span class="lineno">   74</span>  }</div>
-<div class="line"><span class="lineno">   75</span> </div>
-<div class="line"><span class="lineno">   76</span>  fclose(file);</div>
-<div class="line"><span class="lineno">   77</span>}</div>
+<p class="definition">Definition at line <a class="el" href="history_8c_source.html#l00039">39</a> of file <a class="el" href="history_8c_source.html">history.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   39</span>                       {</div>
+<div class="line"><span class="lineno">   40</span>  FILE *file = fopen(<a class="code hl_define" href="history_8c.html#ae41c75682d94c3f1a2c7e1e28ed0391a">HISTORY_FILE</a>, <span class="stringliteral">&quot;r&quot;</span>);</div>
+<div class="line"><span class="lineno">   41</span>  <span class="keywordflow">if</span> (!file) {</div>
+<div class="line"><span class="lineno">   42</span>    <span class="keywordflow">switch</span> (errno) {</div>
+<div class="line"><span class="lineno">   43</span>        <span class="keywordflow">case</span> EACCES: perror(<span class="stringliteral">&quot;display_history: Permission denied&quot;</span>); <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">   44</span>        <span class="keywordflow">case</span> ENOENT: perror(<span class="stringliteral">&quot;display_history: No such file or directory&quot;</span>); <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">   45</span>        <span class="keywordflow">default</span>: perror(<span class="stringliteral">&quot;display_history: Failed to open history file&quot;</span>); <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">   46</span>    }</div>
+<div class="line"><span class="lineno">   47</span>    <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">   48</span>  }</div>
+<div class="line"><span class="lineno">   49</span> </div>
+<div class="line"><span class="lineno">   50</span>  <span class="keywordtype">char</span> line[1024];</div>
+<div class="line"><span class="lineno">   51</span>  <span class="keywordtype">int</span> line_number = 1;</div>
+<div class="line"><span class="lineno">   52</span>  <span class="keywordflow">while</span> (fgets(line, <span class="keyword">sizeof</span>(line), file)) {</div>
+<div class="line"><span class="lineno">   53</span>    printf(<span class="stringliteral">&quot;%d: %s&quot;</span>, line_number++, line);</div>
+<div class="line"><span class="lineno">   54</span>  }</div>
+<div class="line"><span class="lineno">   55</span> </div>
+<div class="line"><span class="lineno">   56</span>  fclose(file);</div>
+<div class="line"><span class="lineno">   57</span>}</div>
 </div><!-- fragment -->
-</div>
-</div>
-<a id="a3b03116158d970b7e3ad5449db963e6f" name="a3b03116158d970b7e3ad5449db963e6f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3b03116158d970b7e3ad5449db963e6f">&#9670;&#160;</a></span>show_prompt()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void show_prompt </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Affiche une invite de commande personnalisée. </p>
-<p>Cette fonction génère une invite de commande qui inclut :</p><ul>
-<li>Le nom de l'utilisateur (variable d'environnement <code>USER</code>).</li>
-<li>Le nom de l'hôte (variable d'environnement <code>HOSTNAME</code>).</li>
-<li>Le répertoire courant (obtenu avec <code>getcwd</code>).</li>
-</ul>
-<p>Les variables d'environnement <code>USER</code> et <code>HOSTNAME</code> doivent être configurées. Si elles ne le sont pas, des valeurs par défaut ("USER" et "HOSTNAME") seront utilisées.</p>
-<p>Exemple de format d'affichage : <code>utilisateur@hôte:/chemin/actuel$</code></p>
-<div class="fragment"><div class="line"><a class="code hl_function" href="history_8c.html#a3b03116158d970b7e3ad5449db963e6f">show_prompt</a>(); <span class="comment">// Affiche l&#39;invite dans le terminal.</span></div>
-<div class="ttc" id="ahistory_8c_html_a3b03116158d970b7e3ad5449db963e6f"><div class="ttname"><a href="history_8c.html#a3b03116158d970b7e3ad5449db963e6f">show_prompt</a></div><div class="ttdeci">void show_prompt()</div><div class="ttdoc">Affiche une invite de commande personnalisée.</div></div>
-</div><!-- fragment --> 
 </div>
 </div>
 </div><!-- contents -->

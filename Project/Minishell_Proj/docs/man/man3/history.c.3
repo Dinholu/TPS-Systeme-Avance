@@ -1,4 +1,4 @@
-.TH "Minishelln/src/history.c" 3 "Version 1.0" "shell" \" -*- nroff -*-
+.TH "Minishelln/src/history.c" 3 "Version 1.0" "Alizée et Vladimir minishell" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -39,10 +39,6 @@ Minishelln/src/history.c
 .RI "void \fBdisplay_history\fP ()"
 .br
 .RI "Affiche l'historique des commandes\&. "
-.ti -1c
-.RI "void \fBshow_prompt\fP ()"
-.br
-.RI "Affiche une invite de commande personnalisée\&. "
 .in -1c
 .SH "Macro Definition Documentation"
 .PP 
@@ -68,45 +64,31 @@ Definition at line \fB11\fP of file \fBhistory\&.c\fP\&..PP
 .nf
 11                                          {
 12   if (!command) {
-13     errno = EFAULT;
-14     return;
+13       errno = EFAULT;
+14       return;
 15   }
-16 
+16   
 17   int fd = open(HISTORY_FILE, O_WRONLY | O_CREAT | O_APPEND, 0644);
 18   if (fd == \-1) {
 19     switch (errno) {
-20     case EACCES:
-21       perror("add_to_history: Permission denied");
-22       break;
-23     case EISDIR:
-24       perror("add_to_history: Is a directory");
-25       break;
-26     case ENOENT:
-27       perror("add_to_history: No such file or directory");
-28       break;
-29     case EFAULT:
-30       perror("add_to_history: Bad address");
-31       break;
-32     default:
-33       perror("add_to_history: Failed to open history file");
-34       break;
-35     }
-36     return;
-37   }
-38 
-39   if (write(fd, command, strlen(command)) == \-1 || write(fd, "\\n", 1) == \-1) {
-40     switch (errno) {
-41     case EFAULT:
-42       perror("add_to_history: Bad address");
-43       break;
-44     default:
-45       perror("add_to_history: Fail to write to history file");
-46       break;
-47     }
-48   }
-49 
-50   close(fd);
-51 }
+20         case EACCES: perror("add_to_history: Permission denied"); break;
+21         case EISDIR: perror("add_to_history: Is a directory"); break;
+22         case ENOENT: perror("add_to_history: No such file or directory"); break;
+23         case EFAULT: perror("add_to_history: Bad address"); break;
+24         default: perror("add_to_history: Failed to open history file"); break;
+25     }
+26     return;
+27   }
+28 
+29   if (write(fd, command, strlen(command)) == \-1 || write(fd, "\\n", 1) == \-1) {
+30         switch (errno) {
+31             case EFAULT: perror("add_to_history: Bad address"); break;
+32             default: perror("add_to_history: Fail to write to history file"); break;
+33         }
+34   }
+35 
+36   close(fd);
+37 }
 .fi
 
 .SS "void display_history ()"
@@ -114,57 +96,29 @@ Definition at line \fB11\fP of file \fBhistory\&.c\fP\&..PP
 .PP
 Affiche l'historique des commandes\&. 
 .PP
-Definition at line \fB53\fP of file \fBhistory\&.c\fP\&..PP
+Definition at line \fB39\fP of file \fBhistory\&.c\fP\&..PP
 .nf
-53                        {
-54   FILE *file = fopen(HISTORY_FILE, "r");
-55   if (!file) {
-56     switch (errno) {
-57     case EACCES:
-58       perror("display_history: Permission denied");
-59       break;
-60     case ENOENT:
-61       perror("display_history: No such file or directory");
-62       break;
-63     default:
-64       perror("display_history: Failed to open history file");
-65       break;
-66     }
-67     return;
-68   }
-69 
-70   char line[1024];
-71   int line_number = 1;
-72   while (fgets(line, sizeof(line), file)) {
-73     printf("%d: %s", line_number++, line);
-74   }
-75 
-76   fclose(file);
-77 }
+39                        {
+40   FILE *file = fopen(HISTORY_FILE, "r");
+41   if (!file) {
+42     switch (errno) {
+43         case EACCES: perror("display_history: Permission denied"); break;
+44         case ENOENT: perror("display_history: No such file or directory"); break;
+45         default: perror("display_history: Failed to open history file"); break;
+46     }
+47     return;
+48   }
+49 
+50   char line[1024];
+51   int line_number = 1;
+52   while (fgets(line, sizeof(line), file)) {
+53     printf("%d: %s", line_number++, line);
+54   }
+55 
+56   fclose(file);
+57 }
 .fi
 
-.SS "void show_prompt ()"
-
-.PP
-Affiche une invite de commande personnalisée\&. Cette fonction génère une invite de commande qui inclut :
-.IP "\(bu" 2
-Le nom de l'utilisateur (variable d'environnement \fCUSER\fP)\&.
-.IP "\(bu" 2
-Le nom de l'hôte (variable d'environnement \fCHOSTNAME\fP)\&.
-.IP "\(bu" 2
-Le répertoire courant (obtenu avec \fCgetcwd\fP)\&.
-.PP
-.PP
-Les variables d'environnement \fCUSER\fP et \fCHOSTNAME\fP doivent être configurées\&. Si elles ne le sont pas, des valeurs par défaut ('USER' et 'HOSTNAME') seront utilisées\&.
-.PP
-Exemple de format d'affichage : \fCutilisateur@hôte:/chemin/actuel$\fP
-.PP
-.PP
-.nf
-show_prompt(); // Affiche l'invite dans le terminal\&.
-.fi
-.PP
- 
 .SH "Author"
 .PP 
-Generated automatically by Doxygen for shell from the source code\&.
+Generated automatically by Doxygen for Alizée et Vladimir minishell from the source code\&.
