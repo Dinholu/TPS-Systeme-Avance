@@ -2,132 +2,133 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include <limits.h>
 
-#define SIZE (long int) 1e8
+#define SIZE (long int)1e8
 
-struct arg_struct {
-    int * tab;
-    int size;
-};
-
-int maxVal = 0x80000000;
-int minVal = 0x7FFFFFFF;
-
-void initializeTab(int * tab)
+typedef struct
 {
-  int i;
-  time_t t;
-  srand((unsigned) time(&t));
+  int *tab;
+  int start;
+  int size;
+} ThreadData;
 
-  for(i=0; i < SIZE; i++ )
+int maxVal = INT_MIN;
+int minVal = INT_MAX;
+pthread_mutex_t min_mutex, max_mutex;
+
+void initializeTab(int *tab)
+{
+  time_t t;
+  srand((unsigned)time(&t));
+  for (long int i = 0; i < SIZE; i++)
   {
     tab[i] = rand();
   }
 }
 
-void *min(void * arguments)
+void *find_min(void *arg)
 {
-  struct arg_struct *args = (struct arg_struct *)arguments;
-  int i;
-  for(i=0; i < args->size; i++ )
+  ThreadData *data = (ThreadData *)arg;
+  int local_min = INT_MAX;
+
+  for (int i = 0; i < data->size; i++)
   {
-    if(minVal > args->tab[i])
-      minVal = args->tab[i];
+    if (data->tab[i] < local_min)
+      local_min = data->tab[i];
+  }
+
+  pthread_mutex_lock(&min_mutex);
+  if (local_min < minVal)
+    minVal = local_min;
+  pthread_mutex_unlock(&min_mutex);
+  return NULL;
+}
+
+void *find_max(void *arg)
+{
+  ThreadData *data = (ThreadData *)arg;
+  int local_max = INT_MIN;
+
+  for (int i = 0; i < data->size; i++)
+  {
+    if (data->tab[i] > local_max)
+      local_max = data->tab[i];
+  }
+
+  pthread_mutex_lock(&max_mutex);
+  if (local_max > maxVal)
+    maxVal = local_max;
+  pthread_mutex_unlock(&max_mutex);
+  return NULL;
+}
+
+void createThreads(int num_threads, int *tab, void *(*func)(void *))
+{
+  pthread_t threads[num_threads];
+  ThreadData thread_data[num_threads];
+  int segment_size = SIZE / num_threads;
+
+  for (int i = 0; i < num_threads; i++)
+  {
+    thread_data[i].tab = tab + i * segment_size;
+    thread_data[i].size = (i == num_threads - 1) ? (SIZE - i * segment_size) : segment_size;
+
+    if (pthread_create(&threads[i], NULL, func, &thread_data[i]) != 0)
+    {
+      perror("Erreur lors de la création du thread");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  for (int i = 0; i < num_threads; i++)
+  {
+    pthread_join(threads[i], NULL);
   }
 }
 
-void *max(void * arguments)
+int main()
 {
-  struct arg_struct *args = (struct arg_struct *)arguments;
-  int i;
-  for(i=0; i < args->size; i++ )
+  int *tab;
+  if (posix_memalign((void **)&tab, 64, SIZE * sizeof(int)) != 0)
   {
-    if(maxVal < args->tab[i])
-      maxVal = args->tab[i];
+    perror("Échec de l'allocation mémoire");
+    return EXIT_FAILURE;
   }
-}
 
-void createThread(int nbThread, int * tab, void  *(*f)(void *))
-{
-  pthread_t tabThread[nbThread];
-  struct arg_struct args;
-
-  if(nbThread <= 0)
-    exit(1);
-
-  args.size = SIZE/nbThread;
-  args.tab = tab;
-  int i=0, md = SIZE%nbThread;
-  if ( md != 0)
-  {
-    pthread_create(&tabThread[i], NULL, &min,(void *) &args);
-    i=1;
-  }
-  for(; i < nbThread; i++)
-  {
-    args.tab = tab+(i*args.size+md);
-    pthread_create(&tabThread[i], NULL, &min,(void *) &args);
-  }
-  for(i = 0; i < nbThread; i++)
-  {
-    pthread_join(tabThread[i], NULL);
-  }
-}
-
-int main(int argc, char** argv)
-{
-  //initialisation sur le tas (sur la pile segfault pas assez de place)
-  int * tab = (int *) malloc(SIZE*sizeof(int));
   initializeTab(tab);
+  pthread_mutex_init(&min_mutex, NULL);
+  pthread_mutex_init(&max_mutex, NULL);
 
-  struct arg_struct args;
-  args.size = SIZE;
-  args.tab = tab;
+  struct timeval start_time, end_time;
+  printf("\nTaille du tableau : %ld\n", SIZE);
 
-  struct timeval temps_avant, temps_apres;
+  int thread_counts[] = {1, 2, 4, 8};
+  for (size_t i = 0; i < sizeof(thread_counts) / sizeof(thread_counts[0]); i++)
+  {
+    int num_threads = thread_counts[i];
+    minVal = INT_MAX;
+    maxVal = INT_MIN;
 
-  printf("\nTaille :  %ld \n",SIZE );
+    printf("\n%d threads créés pour min\n", num_threads);
+    gettimeofday(&start_time, NULL);
+    createThreads(num_threads, tab, find_min);
+    gettimeofday(&end_time, NULL);
+    long elapsed_time = (end_time.tv_sec - start_time.tv_sec) * 1000000L +
+                        (end_time.tv_usec - start_time.tv_usec);
+    printf("-- Min = %d\n-- Temps de recherche : %ld us\n", minVal, elapsed_time);
 
-  printf("\n0 thread créé\n");
-  gettimeofday (&temps_avant, NULL);
-  min((void * )&args);
-  gettimeofday (&temps_apres, NULL);
-  printf("-- Min = %d \n---- Temps de recherche : %ld us\n", minVal,  ((temps_apres.tv_sec - temps_avant.tv_sec) * 1000000 + temps_apres.tv_usec) - temps_avant.tv_usec);
-  gettimeofday (&temps_avant, NULL);
-  max((void * )&args);
-  gettimeofday (&temps_apres, NULL);
-  printf("-- Max = %d \n---- Temps de recherche : %ld us\n", maxVal, ((temps_apres.tv_sec - temps_avant.tv_sec) * 1000000 + temps_apres.tv_usec) - temps_avant.tv_usec);
+    printf("\n%d threads créés pour max\n", num_threads);
+    gettimeofday(&start_time, NULL);
+    createThreads(num_threads, tab, find_max);
+    gettimeofday(&end_time, NULL);
+    elapsed_time = (end_time.tv_sec - start_time.tv_sec) * 1000000L +
+                   (end_time.tv_usec - start_time.tv_usec);
+    printf("-- Max = %d\n-- Temps de recherche : %ld us\n", maxVal, elapsed_time);
+  }
 
-  printf("\n2 threads créés\n");
-  gettimeofday (&temps_avant, NULL);
-  createThread(2, tab, min);
-  gettimeofday (&temps_apres, NULL);
-  printf("-- Min = %d \n---- Temps de recherche : %ld us\n", minVal,  ((temps_apres.tv_sec - temps_avant.tv_sec) * 1000000 + temps_apres.tv_usec) - temps_avant.tv_usec);
-  gettimeofday (&temps_avant, NULL);
-  createThread(2, tab, max);
-  gettimeofday (&temps_apres, NULL);
-  printf("-- Max = %d \n---- Temps de recherche : %ld us\n", maxVal, ((temps_apres.tv_sec - temps_avant.tv_sec) * 1000000 + temps_apres.tv_usec) - temps_avant.tv_usec);
-
-  printf("\n4 threads créés\n");
-  gettimeofday (&temps_avant, NULL);
-  createThread(4, tab, min);
-  gettimeofday (&temps_apres, NULL);
-  printf("-- Min = %d \n---- Temps de recherche : %ld us\n", minVal,  ((temps_apres.tv_sec - temps_avant.tv_sec) * 1000000 + temps_apres.tv_usec) - temps_avant.tv_usec);
-  gettimeofday (&temps_avant, NULL);
-  createThread(4, tab, max);
-  gettimeofday (&temps_apres, NULL);
-  printf("-- Max = %d \n---- Temps de recherche : %ld us\n", maxVal, ((temps_apres.tv_sec - temps_avant.tv_sec) * 1000000 + temps_apres.tv_usec) - temps_avant.tv_usec);
-
-  printf("\n8 threads créés\n");
-  gettimeofday (&temps_avant, NULL);
-  createThread(8, tab, min);
-  gettimeofday (&temps_apres, NULL);
-  printf("-- Min = %d \n---- Temps de recherche : %ld us\n", minVal,  ((temps_apres.tv_sec - temps_avant.tv_sec) * 1000000 + temps_apres.tv_usec) - temps_avant.tv_usec);
-  gettimeofday (&temps_avant, NULL);
-  createThread(8, tab, max);
-  gettimeofday (&temps_apres, NULL);
-  printf("-- Max = %d \n---- Temps de recherche : %ld us\n\n", maxVal, ((temps_apres.tv_sec - temps_avant.tv_sec) * 1000000 + temps_apres.tv_usec) - temps_avant.tv_usec);
- 
+  pthread_mutex_destroy(&min_mutex);
+  pthread_mutex_destroy(&max_mutex);
   free(tab);
   return EXIT_SUCCESS;
 }

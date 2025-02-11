@@ -3,106 +3,108 @@
 
 /**
  * @brief Change le répertoire courant.
- * @param args Tableau d'arguments de la commande.
- * @return 0 si la commande a été exécutée, -1 sinon.
+ * @param args Liste des arguments. args[1] doit être le répertoire cible.
+ * @return 0 si réussi, -1 si une erreur est survenue.
  */
 int builtin_cd(char **args);
 
 /**
  * @brief Affiche le répertoire courant.
- * @return 0 si la commande a été exécutée, -1 sinon.
+ * @return 0 si réussi, -1 si une erreur est survenue.
  */
 int builtin_pwd();
 
 /**
- * @brief Quitte le shell.
- * @return 0 si la commande a été exécutée, -1 sinon.
- */
-int builtin_exit();
-
-/**
- * @brief Affiche les arguments passés en paramètre.
- * @param args Tableau d'arguments de la commande.
- * @return 0 si la commande a été exécutée, -1 sinon.
+ * @brief Affiche l'argument passé en paramètre.
+ * @param args Liste des arguments. args[1] doit être le texte à afficher.
+ * @return 0 si réussi, -1 si une erreur est survenue.
  */
 int builtin_echo(char **args);
 
 /**
- * @brief Recherche une variable d'environnement.
- * @param name Nom de la variable à rechercher.
- * @return Indice de la variable dans le tableau d'environnement, -1 si non
- * trouvée.
+ * @brief Sortir du shell.
+ * @return 0 si réussi, -1 si une erreur est survenue.
+ */
+int builtin_exit();
+
+/**
+ * @brief Affiche la liste des variables d'environnement.
+ * @param name Nom de la variable d'environnement à chercher.
+ * @return 0 si réussi, -1 si une erreur est survenue.
  */
 int find_env_var(const char *name);
 
 /**
- * @brief Ajoute ou modifie une variable d'environnement.
- * @param name Nom de la variable.
- * @param value Valeur de la variable.
+ * @brief Change la valeur d'une variable d'environnement.
+ * @param name Nom de la variable d'environnement.
+ * @param value Valeur de la variable d'environnement.
  */
 void set_env_var(const char *name, const char *value);
 
 /**
  * @brief Récupère la valeur d'une variable d'environnement.
- * @param name Nom de la variable à récupérer.
- * @return Valeur de la variable, NULL si non trouvée.
+ * @param name Nom de la variable d'environnement.
+ * @return Valeur de la variable d'environnement.
  */
 char *get_env_var(const char *name);
 
 /**
  * @brief Supprime une variable d'environnement.
- * @param name Nom de la variable à supprimer.
+ * @param name Nom de la variable d'environnement.
  */
 void unset_env_var(const char *name);
 
 /**
- * @brief Remplace les variables d'environnement dans les arguments.
- * @param args Tableau d'arguments de la commande.
+ * @brief Attribution de la variable d'environnement.
+ * @param args Liste des arguments.
+ * @return 0 si réussi, -1 si une erreur est survenue.
  */
 void expand_env_variables(char **args);
 
 /**
- * @brief Remplace les alias dans les arguments.
- * @param args Tableau d'arguments de la commande.
- */
-void expand_alias(char **args);
-
-/**
- * @brief Affiche toutes les variables d'environnement.
- * @return 0 si la commande a été exécutée, -1 sinon.
+ * @brief Affiche la liste des variables d'environnement.
+ * @return 0 si réussi, -1 si une erreur est survenue.
  */
 int builtin_env();
 
 /**
- * @brief Recherche un alias.
- * @param alias Alias à rechercher.
- * @return Commande associée à l'alias, NULL si non trouvé.
+ * @brief Change la valeur d'un alias.
+ * @param alias Nom de l'alias.
+ * @param command Commande associée à l'alias.
+ * @return 0 si réussi, -1 si une erreur est survenue.
  */
 void set_alias(const char *alias, const char *command);
 
 /**
- * @brief Ajoute ou modifie un alias.
- * @param alias Alias à ajouter ou modifier.
- * @param command Commande associée à l'alias.
+ * @brief Récupère la valeur d'un alias.
+ * @param alias Nom de l'alias.
+ * @return Commande associée à l'alias.
  */
 char *get_alias(const char *alias);
 
 /**
  * @brief Supprime un alias.
- * @param alias Alias à supprimer.
+ * @param alias Nom de l'alias.
  */
 void unset_alias(const char *alias);
 
 /**
- * @brief Affiche tous les alias.
- * @return 0 si la commande a été exécutée, -1 sinon.
+ * @brief Affiche la liste des alias.
+ * @return 0 si réussi, -1 si une erreur est survenue.
  */
 int builtin_alias();
 
 /**
- * @brief Vérifie si une commande est un built-in et l'exécute si c'est le cas.
- * @param args Tableau d'arguments de la commande.
- * @return -1 si un built-in a été exécuté, 0 sinon.
+ * @brief Attribution de l'alias.
+ * @param args Liste des arguments.
+ * @return 0 si réussi, -1 si une erreur est survenue.
+ */
+void expand_alias(char **args);
+
+/**
+ * @brief Vérifie si la commande est un built-in.
+ * @param args Liste des arguments.
+ * @return 0 si la commande est un built-in, -1 sinon.
  */
 int is_builtin(char **args);
 
