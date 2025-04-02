@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-//test
+//test 3 :D 
 // Ouvre un fichier pour redirection de sortie
 int open_output_redirection(const char *filename, int append)
 {
