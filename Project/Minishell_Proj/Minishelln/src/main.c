@@ -18,16 +18,10 @@ extern EnvVar env_vars[MAX_ENV_VARS];
 extern Alias aliases[MAX_ALIASES];
 extern int env_count;
 extern int alias_count;
-/**
- * @brief Fonction principale du shell.
- * Boucle principale qui lit les commandes de l'utilisateur,
- * les analyse, et les exécute.
- * @param argc Nombre d'arguments passés au programme.
- * @param argv Tableau d'arguments passés au programme.
- */
+
 int main(int argc, char *argv[])
 {
-    // Mode batch
+    // Mode batch avec `-c`
     if (argc == 3 && strcmp(argv[1], "-c") == 0)
     {
         execute_commands_with_logic(argv[2]);
@@ -39,8 +33,10 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Usage: %s [-c command]\n", argv[0]);
         return -1;
     }
+
     // Mode interactif
     char command[1024];
+
     while (1)
     {
         printf(PROMPT);
@@ -52,43 +48,13 @@ int main(int argc, char *argv[])
 
         // Supprime le '\n' en fin de commande
         command[strcspn(command, "\n")] = 0;
-
-        // Vérifie si la commande est vide
         if (strlen(command) == 0)
             continue;
+
+        // Ajoute la commande à l'historique
         add_to_history(command);
 
-        if (strncmp(command, "alias ", 6) == 0)
-        {
-            char *alias_def = command + 6;
-            char *equals_sign = strchr(alias_def, '=');
-            if (equals_sign)
-            {
-                *equals_sign = '\0';
-                char *alias_name = alias_def;
-                char *alias_value = equals_sign + 1;
-
-                if (alias_value[0] == '"' && alias_value[strlen(alias_value) - 1] == '"')
-                {
-                    alias_value[strlen(alias_value) - 1] = '\0';
-                    alias_value++;
-                }
-                set_alias(alias_name, alias_value);
-            }
-            else
-            {
-                fprintf(stderr, "alias: invalid syntax\n");
-            }
-            continue;
-        }
-
-
-        if (strncmp(command, "unalias ", 8) == 0)
-        {
-            unset_alias(command + 8);
-            continue;
-        }
-
+        // Vérifie si c'est une commande d'affectation de variable
         if (strchr(command, '=') && !strchr(command, ' '))
         {
             char *name = strtok(command, "=");
@@ -100,90 +66,49 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        // Vérifie si la commande est une suppression de variable
+        // Vérifie si c'est une suppression de variable
         if (strncmp(command, "unset ", 6) == 0)
         {
             unset_env_var(command + 6);
             continue;
         }
 
-        int is_background = check_background_execution(command);
-        CommandNode commands[MAX_COMMANDS];
-        int command_count = parse_control_operators(command, commands);
-        int success = 1;
+        // Vérifie si c'est une commande interne (built-in)
+        char **args = parse_command(command);
+        expand_env_variables(args); // Expansion des variables d’environnement
 
-        for (int i = 0; i < command_count; i++)
+        if (is_builtin(args) == 0)
         {
-            if (i > 0)
-            {
-                if ((commands[i - 1].type == CMD_AND && !success) ||
-                    (commands[i - 1].type == CMD_OR && success))
-                {
-                    continue;
-                }
-            }
-
-            char **args = parse_command(commands[i].command);
-            if (!args || args[0] == NULL)
-            {
-                free(args);
-                continue;
-            }
-
-            char *alias_expansion = get_alias(args[0]);
-            if (alias_expansion)
-            {
-                free(args[0]);
-                args[0] = strdup(alias_expansion);
-
-                char **expanded_args = parse_command(alias_expansion);
-                if (expanded_args)
-                {
-                    free(args);
-                    args = expanded_args;
-                }
-            }
-
-            expand_env_variables(args);
-
-            if (is_builtin(args) == 0)
-            {
-                free(args);
-                free(commands[i].command);
-                success = 1;
-                continue;
-            }
-
-            pid_t pid = fork();
-            if (pid == 0)
-            {
-                if (execvp(args[0], args) == -1)
-                {
-                    perror("execvp");
-                }
-                exit(EXIT_FAILURE);
-            }
-            else if (pid > 0)
-            {
-                if (!is_background)
-                {
-                    int status;
-                    waitpid(pid, &status, 0);
-                    success = (WIFEXITED(status) && WEXITSTATUS(status) == 0);
-                }
-                else
-                {
-                    printf("[Background process started] PID: %d\n", pid);
-                }
-            }
-            else
-            {
-                perror("fork");
-                success = 0;
-            }
             free(args);
-            free(commands[i].command);
+            continue;
         }
+
+        // Vérifie si c'est une commande en arrière-plan
+        int is_background = check_background_execution(command);
+
+        // Vérifie si la commande contient `|`, `>`, `>>`, `<`
+        if (strchr(command, '|'))
+        {
+            char *cmds[MAX_COMMANDS] = {NULL};
+            int count = 0;
+            char *token = strtok(command, "|");
+            while (token)
+            {
+                cmds[count++] = token;
+                token = strtok(NULL, "|");
+            }
+            execute_piped_commands(cmds);
+        }
+        else if (strchr(command, '>') || strchr(command, '<'))
+        {
+            execute_command(args);
+        }
+        else
+        {
+            execute_commands_with_logic(command);
+        }
+
+        free(args);
     }
     return 0;
 }

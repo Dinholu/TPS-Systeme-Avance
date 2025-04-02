@@ -6,35 +6,63 @@
 #include <errno.h>
 
 // Commandes intégrées (built-in)
-int builtin_cd(char **args) {
-    if (!args) {
+int builtin_cd(char **args)
+{
+    if (!args)
+    {
         errno = EFAULT;
         return -1;
     }
 
-    if (!args[1]) {
-        perror("cd: missing argument\n");
-        return -1;
+    if (!args[1])
+    {
+        args[1] = getenv("HOME"); // Aller dans le home si aucun argument
     }
-    if (chdir(args[1]) != 0) {
-        switch (errno) {
-            case EFAULT: perror("cd: Bad address\n"); break;
-            case ENOTDIR: perror("cd: Not a directory\n"); break;
-            case ELOOP: perror("cd: Too many symbolic links\n"); break;
-            default: perror("cd"); break;
+
+    if (chdir(args[1]) != 0)
+    {
+        switch (errno)
+        {
+        case EFAULT:
+            perror("cd: Bad address\n");
+            break;
+        case ENOTDIR:
+            perror("cd: Not a directory\n");
+            break;
+        case ELOOP:
+            perror("cd: Too many symbolic links\n");
+            break;
+        default:
+            perror("cd");
+            break;
         }
         return -1;
+    }
+
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)))
+    {
+        set_env_var("PWD", cwd);
     }
     return 0;
 }
 
-int builtin_pwd() {
+int builtin_pwd()
+{
     char cwd[1024];
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        switch (errno) {
-            case EFAULT: perror("pwd: Bad address\n"); break;
-            case ERANGE: perror("pwd: Buffer too small\n"); break;
-            default: perror("pwd"); break;
+    if (getcwd(cwd, sizeof(cwd)) == NULL)
+    {
+        switch (errno)
+        {
+        case EFAULT:
+            perror("pwd: Bad address\n");
+            break;
+        case ERANGE:
+            perror("pwd: Buffer too small\n");
+            break;
+        default:
+            perror("pwd");
+            break;
         }
         return -1;
     }
@@ -42,20 +70,27 @@ int builtin_pwd() {
     return 0;
 }
 
-int builtin_echo(char **args) {
-    if (!args) {
+int builtin_echo(char **args)
+{
+    if (!args)
+    {
         errno = EFAULT;
         return -1;
     }
 
-    for (int i = 1; args[i]; i++) {
-        if (args[i][0] == '"' && args[i][strlen(args[i]) - 1] == '"') {
+    for (int i = 1; args[i]; i++)
+    {
+        if (args[i][0] == '"' && args[i][strlen(args[i]) - 1] == '"')
+        {
             args[i][strlen(args[i]) - 1] = '\0';
             printf("%s", args[i] + 1);
-        } else {
+        }
+        else
+        {
             printf("%s", args[i]);
         }
-        if (args[i + 1]) {
+        if (args[i + 1])
+        {
             printf(" ");
         }
     }
@@ -63,7 +98,8 @@ int builtin_echo(char **args) {
     return 0;
 }
 
-int builtin_exit() {
+int builtin_exit()
+{
     printf("Exiting shell...\nThanks to have used it ! Bye !\n");
     exit(0);
 }
@@ -72,49 +108,65 @@ int builtin_exit() {
 EnvVar env_vars[MAX_ENV_VARS];
 int env_count = 0;
 
-int find_env_var(const char *name) {
-    if (!name) {
+int find_env_var(const char *name)
+{
+    if (!name)
+    {
         errno = EFAULT;
         return -1;
     }
 
-    for (int i = 0; i < env_count; i++) {
-        if (strcmp(env_vars[i].name, name) == 0) {
+    for (int i = 0; i < env_count; i++)
+    {
+        if (strcmp(env_vars[i].name, name) == 0)
+        {
             return i;
         }
     }
     return -1;
 }
 
-void set_env_var(const char *name, const char *value) {
-    if (!name || !value) {
+void set_env_var(const char *name, const char *value)
+{
+    if (!name || !value)
+    {
         errno = EFAULT;
         return;
     }
 
     int index = find_env_var(name);
-    if (index >= 0) {
+    if (index >= 0)
+    {
         free(env_vars[index].value);
-        if ((env_vars[index].value = strdup(value)) == NULL) {
+        if ((env_vars[index].value = strdup(value)) == NULL)
+        {
             perror("set_env_var: Memory allocation failed\n");
             exit(EXIT_FAILURE);
         }
-    } else {
-        if (env_count < MAX_ENV_VARS) {
+    }
+    else
+    {
+        if (env_count < MAX_ENV_VARS)
+        {
             if ((env_vars[env_count].name = strdup(name)) == NULL ||
-                (env_vars[env_count].value = strdup(value)) == NULL) {
+                (env_vars[env_count].value = strdup(value)) == NULL)
+            {
                 perror("set_env_var: Memory allocation failed\n");
                 exit(EXIT_FAILURE);
             }
             env_count++;
-        } else {
+        }
+        else
+        {
             perror("Maximum environment variable limit reached.\n");
         }
     }
 }
 
-char *get_env_var(const char *name) {
-    if (!name) {
+char *get_env_var(const char *name)
+{
+    if (!name)
+    {
         errno = EFAULT;
         return NULL;
     }
@@ -123,36 +175,46 @@ char *get_env_var(const char *name) {
     return index >= 0 ? env_vars[index].value : NULL;
 }
 
-void unset_env_var(const char *name) {
-    if (!name) {
+void unset_env_var(const char *name)
+{
+    if (!name)
+    {
         errno = EFAULT;
         return;
     }
 
     int index = find_env_var(name);
-    if (index >= 0) {
+    if (index >= 0)
+    {
         free(env_vars[index].name);
         free(env_vars[index].value);
-        for (int i = index; i < env_count - 1; i++) {
+        for (int i = index; i < env_count - 1; i++)
+        {
             env_vars[i] = env_vars[i + 1];
         }
         env_count--;
     }
 }
 
-void expand_env_variables(char **args) {
-    if (!args) {
+void expand_env_variables(char **args)
+{
+    if (!args)
+    {
         errno = EFAULT;
         return;
     }
 
-    for (int i = 0; args[i]; i++) {
-        if (args[i][0] == '$' && strlen(args[i]) > 1) {
+    for (int i = 0; args[i]; i++)
+    {
+        if (args[i][0] == '$' && strlen(args[i]) > 1)
+        {
             char *var_name = args[i] + 1;
             char *value = get_env_var(var_name);
-            if (value) {
+            if (value)
+            {
                 free(args[i]);
-                if ((args[i] = strdup(value)) == NULL) {
+                if ((args[i] = strdup(value)) == NULL)
+                {
                     perror("expand_env_variables: Memory allocation failed\n");
                     exit(EXIT_FAILURE);
                 }
@@ -161,11 +223,14 @@ void expand_env_variables(char **args) {
     }
 }
 
-int builtin_env() {
-    for (int i = 0; i < env_count; i++) {
+int builtin_env()
+{
+    for (int i = 0; i < env_count; i++)
+    {
         printf("%s=%s\n", env_vars[i].name, env_vars[i].value);
     }
-    if (env_count == 0) {
+    if (env_count == 0)
+    {
         printf("No environment variables defined.\n");
     }
     return 0;
@@ -175,21 +240,27 @@ int builtin_env() {
 Alias aliases[MAX_ALIASES];
 int alias_count = 0;
 
-void set_alias(const char *alias, const char *command) {
-    if (!alias || !command) {
+void set_alias(const char *alias, const char *command)
+{
+    if (!alias || !command)
+    {
         errno = EFAULT;
         return;
     }
 
-    if (strcmp(alias, command) == 0) {
+    if (strcmp(alias, command) == 0)
+    {
         perror("alias: cannot create recursive alias\n");
         return;
     }
 
-    for (int i = 0; i < alias_count; i++) {
-        if (strcmp(aliases[i].alias, alias) == 0) {
+    for (int i = 0; i < alias_count; i++)
+    {
+        if (strcmp(aliases[i].alias, alias) == 0)
+        {
             free(aliases[i].command);
-            if ((aliases[i].command = strdup(command)) == NULL) {
+            if ((aliases[i].command = strdup(command)) == NULL)
+            {
                 perror("set_alias: Memory allocation failed\n");
                 exit(EXIT_FAILURE);
             }
@@ -197,43 +268,56 @@ void set_alias(const char *alias, const char *command) {
         }
     }
 
-    if (alias_count < MAX_ALIASES) {
+    if (alias_count < MAX_ALIASES)
+    {
         if ((aliases[alias_count].alias = strdup(alias)) == NULL ||
-            (aliases[alias_count].command = strdup(command)) == NULL) {
+            (aliases[alias_count].command = strdup(command)) == NULL)
+        {
             perror("set_alias: Memory allocation failed\n");
             exit(EXIT_FAILURE);
         }
         alias_count++;
-    } else {
+    }
+    else
+    {
         perror("Maximum alias limit reached.\n");
     }
 }
 
-char *get_alias(const char *alias) {
-    if (!alias) {
+char *get_alias(const char *alias)
+{
+    if (!alias)
+    {
         errno = EFAULT;
         return NULL;
     }
 
-    for (int i = 0; i < alias_count; i++) {
-        if (strcmp(aliases[i].alias, alias) == 0) {
+    for (int i = 0; i < alias_count; i++)
+    {
+        if (strcmp(aliases[i].alias, alias) == 0)
+        {
             return aliases[i].command;
         }
     }
     return NULL;
 }
 
-void unset_alias(const char *alias) {
-    if (!alias) {
+void unset_alias(const char *alias)
+{
+    if (!alias)
+    {
         errno = EFAULT;
         return;
     }
 
-    for (int i = 0; i < alias_count; i++) {
-        if (strcmp(aliases[i].alias, alias) == 0) {
+    for (int i = 0; i < alias_count; i++)
+    {
+        if (strcmp(aliases[i].alias, alias) == 0)
+        {
             free(aliases[i].alias);
             free(aliases[i].command);
-            for (int j = i; j < alias_count - 1; j++) {
+            for (int j = i; j < alias_count - 1; j++)
+            {
                 aliases[j] = aliases[j + 1];
             }
             alias_count--;
@@ -242,30 +326,38 @@ void unset_alias(const char *alias) {
     }
 }
 
-int builtin_alias() {
-    for (int i = 0; i < alias_count; i++) {
+int builtin_alias()
+{
+    for (int i = 0; i < alias_count; i++)
+    {
         printf("alias %s='%s'\n", aliases[i].alias, aliases[i].command);
     }
-    if (alias_count == 0) {
+    if (alias_count == 0)
+    {
         printf("No aliases defined.\n");
     }
     return 0;
 }
 
-void expand_alias(char **args) {
-    if (!args) {
+void expand_alias(char **args)
+{
+    if (!args)
+    {
         errno = EFAULT;
         return;
     }
 
-    if (args[0] == NULL) return;
+    if (args[0] == NULL)
+        return;
 
     char *alias_value = get_alias(args[0]);
-    if (alias_value) {
+    if (alias_value)
+    {
         char *alias_copy = strdup(alias_value);
         int i = 0;
         char *token = strtok(alias_copy, " ");
-        while (token && i < MAX_ARGS - 1) {
+        while (token && i < MAX_ARGS - 1)
+        {
             args[i++] = strdup(token);
             token = strtok(NULL, " ");
         }
@@ -274,18 +366,26 @@ void expand_alias(char **args) {
     }
 }
 
-int is_builtin(char **args) {
-    if (!args || !args[0]) {
+int is_builtin(char **args)
+{
+    if (!args || !args[0])
+    {
         errno = EFAULT;
         return -1;
     }
 
-    if (strcmp(args[0], "cd") == 0) return builtin_cd(args);
-    if (strcmp(args[0], "pwd") == 0) return builtin_pwd();
-    if (strcmp(args[0], "exit") == 0) return builtin_exit();
-    if (strcmp(args[0], "echo") == 0) return builtin_echo(args);
-    if (strcmp(args[0], "env") == 0) return builtin_env();
-    if (strcmp(args[0], "aliases") == 0) return builtin_alias();
+    if (strcmp(args[0], "cd") == 0)
+        return builtin_cd(args);
+    if (strcmp(args[0], "pwd") == 0)
+        return builtin_pwd();
+    if (strcmp(args[0], "exit") == 0)
+        return builtin_exit();
+    if (strcmp(args[0], "echo") == 0)
+        return builtin_echo(args);
+    if (strcmp(args[0], "env") == 0)
+        return builtin_env();
+    if (strcmp(args[0], "aliases") == 0)
+        return builtin_alias();
 
     return -1; // Pas de commande built-in
 }
